@@ -13,7 +13,7 @@ INSTALL_DIR="/opt/customer"
 INSTALL_USER="ec2-user"
 
 # ## GITHUB_USER="<you>"
-GITHUB_USER="khultman"
+# GITHUB_USER=""
 
 # ## GIT_URI=${GITHUB_USER}@github.com:${GITHUB_USER}/Superalgos.git
 GIT_URI="${GITHUB_USER}@github.com:${GITHUB_USER}/Superalgos.git"
@@ -67,7 +67,7 @@ ExecStart=${NODEJS_BINARY} platform ${PLATFORM_OPTS} ${PLATFORM_EXCHANGE}
 
 [Install]
 WantedBy=multi-user.target
-EOF)
+EOF
 # ### end: systemctl service file
 
 
