@@ -120,6 +120,10 @@ resource "aws_route_table_association" "private" {
   route_table_id = "${aws_route_table.private.id}"
 }
 
+
+/*==== Security Groups ======*/
+
+
 /*==== VPC's Default Security Group ======*/
 resource "aws_security_group" "default" {
   name        = "${var.environment}-default-sg"
@@ -141,5 +145,34 @@ resource "aws_security_group" "default" {
   }
   tags = {
     Environment = "${var.environment}"
+    Application = "${var.appname}"
+    Team        = "${var.team}"
+  }
+}
+
+
+/*==== application instance security group ======*/
+resource "aws_security_group" "app-instance" {
+  name        = "${var.environment}-appinstance-sg"
+  description = "Default security group to allow inbound/outbound from the VPC"
+  vpc_id      = "${aws_vpc.vpc.id}"
+  depends_on  = [aws_vpc.vpc]
+  ingress {
+    from_port = "0"
+    to_port   = "0"
+    protocol  = "-1"
+    self      = true
+  }
+  
+  egress {
+    from_port = "0"
+    to_port   = "0"
+    protocol  = "-1"
+    self      = "true"
+  }
+  tags = {
+    Environment = "${var.environment}"
+    Application = "${var.appname}"
+    Team        = "${var.team}"
   }
 }
