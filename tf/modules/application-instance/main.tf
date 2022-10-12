@@ -7,7 +7,7 @@ resource "aws_security_group" "sg_app" {
   name        = "${var.environment}-sg-appinstance"
   description = "Application Instance Security Group"
   vpc_id      = "${module.Networking.vpc_id}"
-  depends_on  = "${module.Networking}"
+  depends_on  = ["${module.Networking}"]
   
   ingress {
     from_port       = "34248"
