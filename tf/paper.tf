@@ -1,9 +1,29 @@
 module "networking" {
-source = "./modules/networking"
-  region               = "${var.region}"
-  environment          = "${var.environment}"
-  vpc_cidr             = "${var.vpc_cidr}"
-  public_subnets_cidr  = "${var.public_subnets_cidr}"
-  private_subnets_cidr = "${var.private_subnets_cidr}"
-  availability_zones   = "${local.production_availability_zones}"
+    source = "./modules/networking"
+    region               = "${var.region}"
+    environment          = "${var.environment}"
+    vpc_cidr             = "${var.vpc_cidr}"
+    public_subnets_cidr  = "${var.public_subnets_cidr}"
+    private_subnets_cidr = "${var.private_subnets_cidr}"
+    availability_zones   = "${local.production_availability_zones}"
+}
+
+module "application-loadbalancer" {
+    source = "./modules/application-loadbalancer"
+    region               = "${var.region}"
+    environment          = "${var.environment}"
+    vpc_cidr             = "${var.vpc_cidr}"
+    public_subnets_cidr  = "${var.public_subnets_cidr}"
+    private_subnets_cidr = "${var.private_subnets_cidr}"
+    availability_zones   = "${local.production_availability_zones}"
+}
+
+module "bastion" {
+    source = "./modules/networking"
+    region               = "${var.region}"
+    environment          = "${var.environment}"
+    vpc_cidr             = "${var.vpc_cidr}"
+    public_subnets_cidr  = "${var.public_subnets_cidr}"
+    private_subnets_cidr = "${var.private_subnets_cidr}"
+    availability_zones   = "${local.production_availability_zones}"
 }
