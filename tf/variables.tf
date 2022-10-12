@@ -28,3 +28,13 @@ variable "vpn_subdomain" {
     description = "Subdomain for client vpn endpoints, creates zone within the root domain, e.x bar for bar.foo.com"
     default = "vpn"
 }
+
+variable "application_listen_port" {
+    description = "The port the aplication listens on"
+    default = "34248"
+}
+
+variable "application_listen_proto" {
+    description = "The Protocol the application listens on [e.g tcp/udp]"
+    default = "tcp"
+}
