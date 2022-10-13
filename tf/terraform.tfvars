@@ -10,7 +10,6 @@ vpc_cidr = "10.42.0.0/19"
 vpn_subdomain = "vpn"
 
 
-
 appname = "Superalgos"
 
 application_listen_port = "34248"
