@@ -1,21 +1,12 @@
+# Standard subnet variables
 
-variable "appname" {
-  description = "Name of application"
+variable "vpc_id" {
+  description = "The ID of the VPC to create the subnets in"
   type        = string
 }
 
-variable "region" {
-  description = "AWS Deployment Region"
-  type        = string
-}
-
-variable "support_team" {
-  description = "Owning or Supporting application team"
-  type        = string
-}
-
-variable "vpc_cidr" {
-  description = "CIDR Block for VPC"
+variable "cidr_block" {
+  description = "The larger CIDR block to use for calculating individual subnet CIDR blocks"
   type        = string
 }
 
@@ -53,9 +44,4 @@ variable "map_public_ip_on_launch" {
   description = "Assign a public IP address to instances launched into these subnets"
   type        = string
   default     = false
-}
-
-variable "gateway_id" {
-  description = "The ID of the Internet Gateway to use for routing"
-  type        = string
 }
