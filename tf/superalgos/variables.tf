@@ -38,3 +38,13 @@ variable "application_listen_proto" {
     description = "The Protocol the application listens on [e.g tcp/udp]"
     default = "tcp"
 }
+
+variable "min-instances" {
+    description = "Minimum number of application instances"
+    default = 1
+}
+
+variable "max-instances" {
+    description = "Maximum number of application instances"
+    default = 1
+}
