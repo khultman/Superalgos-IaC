@@ -1,15 +1,21 @@
+GOCMD=go
+GOINIT=$(GOCMD) mod init
+GOTEST=$(GOCMD) test
+GOTESTOPTS=-v -count=1 -timeout 30m -p 1
+GOTIDY=$(GOCMD) tidy
+GOVET=$(GOCMD) vet
 REPO=github.com/DarkLight-Ventures/Superalgos-IaC.git
 TESTFILES=$(wildcard $(PWD)/*.go)
 
 
-.PHONY: all init test
+.PHONY: all init test $(TESTFILES)
 
 all: init test
 
 init:
-	go mod init $(REPO)
-	go tidy
+	$(GOINIT) $(REPO)
+	$(GOTIDY)
 
-test:
-	go test -v -count=1 -timeout 30m -p 1 ./
+test: $(TESTFILES)
+	$(GOTEST) $(GOTESTOPTS) ./
 
