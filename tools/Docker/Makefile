@@ -2,6 +2,8 @@ DOCKER_USER=khultman
 DOCKER_NAME=terraform
 DOCKER_IMAGE=$(DOCKER_USER)/$(DOCKER_NAME)
 
+DOCKER_CMD=lima nerdctl
+
 BUILD_DATE=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 
 ENV_VARS=.env
@@ -31,24 +33,24 @@ CTNR_SSH_KEYS=/root/.ssh
 all: docker-build docker-run-interactive
 
 docker-build:
-	@docker build --no-cache=true \
-	              --build-arg APP_DIR=$(APP_WRK_DIR) \
-				  --build-arg ARCH=$(ARCH) \
-	              --build-arg BUILD_DATE=$(BUILD_DATE) \
-	              --build-arg IMAGE_NAME=$(DOCKER_IMAGE) \
-				  --build-arg MAINTAINER=$(MAINTAINER) \
-	              --build-arg SRC_DIR=$(APP_SRC_DIR) \
-				  --build-arg TERRAFORM_RELEASE=$(TERRAFORM_RELEASE) \
-	              -t $(DOCKER_IMAGE):latest \
-	              .
+	@$(DOCKER_CMD) build \
+		--no-cache=true \
+		--build-arg APP_DIR=$(APP_WRK_DIR) \
+		--build-arg ARCH=$(ARCH) \
+		--build-arg BUILD_DATE=$(BUILD_DATE) \
+		--build-arg IMAGE_NAME=$(DOCKER_IMAGE) \
+		--build-arg MAINTAINER=$(MAINTAINER) \
+		--build-arg SRC_DIR=$(APP_SRC_DIR) \
+		--build-arg TERRAFORM_RELEASE=$(TERRAFORM_RELEASE) \
+		-t $(DOCKER_IMAGE):latest .
 
 
 docker-push:
-	@docker push $(DOCKER_IMAGE):latest
+	@$(DOCKER_CMD) push $(DOCKER_IMAGE):latest
 
 
 docker-run:
-	@docker run --rm \
+	@$(DOCKER_CMD) run --rm \
 		-v ~/.ssh/:/root/.ssh \
 		-p $(APP_HOST_PORT):$(APP_CTNR_PORT) \
 		--name $(DOCKER_NAME) $(DOCKER_IMAGE):latest /bin/ash
@@ -56,13 +58,11 @@ docker-run:
 
 docker-run-interactive:
 	@if ! test -f $(ENV_VARS); then touch $(ENV_VARS); fi
-	@docker \
-		run \
+	@$(DOCKER_CMD) run \
 		-it \
 		--rm \
 		--env-file=$(ENV_VARS) \
 		-v $(HOST_SSH_KEYS):$(CTNR_SSH_KEYS) \
-		-v $(HOST_DOCKER_SOCK):$(CTNR_DOCKER_SOCK) \
 		-v $(APP_SRC_DIR):$(APP_WRK_DIR) \
 		-p $(APP_HOST_PORT):$(APP_CTNR_PORT) \
 		--name $(DOCKER_NAME) $(DOCKER_IMAGE):latest /bin/ash
