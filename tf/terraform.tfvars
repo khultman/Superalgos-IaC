@@ -16,3 +16,6 @@ application_listen_port = "34248"
 
 application_listen_proto = "tcp"
 
+
+environment_live = "live"
+environment_paper = "paper"
