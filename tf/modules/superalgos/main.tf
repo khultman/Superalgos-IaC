@@ -1,6 +1,6 @@
 
 module "networking" {
-    source = "./modules/networking"
+    source = "DarkLight-Ventures/Superalgos-IaC/tf/modules/networking"
     region               = "${var.region}"
     environment          = "${var.environment}"
     vpc_cidr             = "${var.vpc_cidr}"
@@ -10,20 +10,20 @@ module "networking" {
 }
 
 module "application-loadbalancer" {
-    source = "./modules/application-loadbalancer"
+    source = "DarkLight-Ventures/Superalgos-IaC/tf/modules/application-loadbalancer"
     region               = "${var.region}"
     environment          = "${var.environment}"
     application_listen_proto = "${var.application_listen_proto}"
 }
 
 module "bastion" {
-    source = "./modules/bastion"
+    source = "DarkLight-Ventures/Superalgos-IaC/tf/modules/bastion"
     region               = "${var.region}"
     environment          = "${var.environment}"
 }
 
 module "vpn" {
-    source = "./modules/vpn"
+    source = "DarkLight-Ventures/Superalgos-IaC/tf/modules/vpn"
     region               = "${var.region}"
     environment          = "${var.environment}"
 }
