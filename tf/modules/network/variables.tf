@@ -4,11 +4,6 @@ variable "appname" {
     default               = "superalgos"
 }
 
-variable "availability_zones" {
-    description           = "Availability Zones"
-    default               = ["us-east-1a", "us-east-1b", "us-east-1c"]
-}
-
 variable "domain_name" {
     description           = "Root domain name, e.x foo.com"
     default               = "set-the-domain-name.com"
@@ -31,7 +26,7 @@ variable "vpn_subdomain" {
 
 variable "application_listen_port" {
     description           = "The port the aplication listens on"
-    default               = "34248"
+    default               = "8080"
 }
 
 variable "application_listen_proto" {
@@ -39,20 +34,31 @@ variable "application_listen_proto" {
     default               = "tcp"
 }
 
-variable "max-instances" {
-    description           = "Maximum number of application instances"
-    default               = 1
+variable "subnets" {
+    description           = "Map of the subnets to be created"
+    type                  = map(map(string, string))
+    default               = {
+        "public"          = {
+            "cidr_bits"   = "23"
+            }
+        "application"     = {
+            "cidr_bits"   = "23"
+        }
+        "bastion"         = {
+            "cidr_bits"   = "23"
+        }
+    }
 }
 
-variable "private_subnets" {
-    description           = "List of Private Subnets"
-    default               = ["10.42.128.0/23", "10.42.130.0/23", "10.42.132.0/23"]
-}
+# variable "private_subnets" {
+#     description           = "List of Private Subnets"
+#     default               = ["10.42.128.0/23", "10.42.130.0/23", "10.42.132.0/23"]
+# }
 
-variable "public_subnets" {
-    description           = "List of Public Subnets"
-    default               = ["10.42.0.0/23", "10.42.2.0/23", "10.42.4.0/23"]
-}
+# variable "public_subnets" {
+#     description           = "List of Public Subnets"
+#     default               = ["10.42.0.0/23", "10.42.2.0/23", "10.42.4.0/23"]
+# }
 
 variable "tags" {
   description             = "A map of tags to assign to resources"
@@ -65,3 +71,12 @@ variable "tags_for_resource" {
   type                    = map(map(string))
   default                 = {}
 }
+
+
+
+locals {
+  availability_zones = ["${var.region}a", "${var.region}b", "${var.region}c"]
+  private_subnets = ""
+  public_subnets = ""
+}
+

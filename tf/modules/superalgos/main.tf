@@ -1,24 +1,12 @@
 
-module "vpc" {
-  source                  = "git@github.com:terraform-aws-modules/terraform-aws-vpc.git"
-
+module "network" {
+  source                  = "../network"
   name                    = "${var.environment}-${var.appname}"
-  
-  cidr                    = "${var.vpc_cidr}"
-  azs                     = "${var.availability_zones}"
+  vpc_cidr                = "${var.vpc_cidr}"
   private_subnets         = "${var.private_subnets}"
   public_subnets          = "${var.public_subnets}"
-
-  enable_dns_hostnames    = true
-
-  enable_ipv6             = false
-
-  enable_nat_gateway      = true
-  one_nat_gateway_per_az  = false
-  
-  enable_vpn_gateway      = true
-
-  tags                    = merge(var.tags, lookup(var.tags_for_resource, "aws_vpc", {}))
+  tags                    = "${var.tags}"
+  tags_for_resource       = "${var.tags_for_resource}"
 }
 
 
