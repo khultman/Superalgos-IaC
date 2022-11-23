@@ -1,4 +1,7 @@
 
+
+
+
 variable "appname" {
     description           = "Name of application"
     default               = "superalgos"
@@ -40,14 +43,40 @@ variable "subnets" {
     default               = {
         "public"          = {
             "cidr_bits"   = "23"
+            "count"       = "3"
             }
         "application"     = {
             "cidr_bits"   = "23"
+            "count"       = "3"
         }
         "bastion"         = {
             "cidr_bits"   = "23"
+            "count"       = "3"
         }
     }
+}
+
+data "aws_availability_zones" "available" {
+    state = "available"
+}
+
+locals {
+    availability_zones = data.aws_availability_zones.available.names
+}
+
+locals {
+    public_subnets = [
+        for az in local.availability_zones : 
+            "${lookup(var.subnets, "public")}.${local.cidr_c_private_subnets + index(local.availability_zones, az)}.0/${lookup(var.subnets)}"
+        ]
+    application_subnets = [
+        for az in local.availability_zones : 
+            "${lookup(var.cidr_ab, "application")}.${local.cidr_c_database_subnets + index(local.availability_zones, az)}.0/24"
+        ]
+    bastion_subnets = [
+        for az in local.availability_zones : 
+            "${lookup(var.cidr_ab, "bastion")}.${local.cidr_c_public_subnets + index(local.availability_zones, az)}.0/24"
+        ]
 }
 
 # variable "private_subnets" {
@@ -74,9 +103,9 @@ variable "tags_for_resource" {
 
 
 
-locals {
-  availability_zones = ["${var.region}a", "${var.region}b", "${var.region}c"]
-  private_subnets = ""
-  public_subnets = ""
-}
+# locals {
+#   availability_zones = ["${var.region}a", "${var.region}b", "${var.region}c"]
+#   private_subnets = ""
+#   public_subnets = ""
+# }
 
