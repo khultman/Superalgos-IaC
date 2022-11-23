@@ -1,5 +1,4 @@
 
-
 module "superalgos" {
     source                = "./modules/superalgos"
 
@@ -12,3 +11,4 @@ module "superalgos" {
 
     tags                  = "${var.tags}"
 }
+
