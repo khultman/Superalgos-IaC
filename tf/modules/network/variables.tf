@@ -1,61 +1,67 @@
 
 variable "appname" {
-  description = "Name of application"
-  type        = string
-}
-
-variable "region" {
-  description = "AWS Deployment Region"
-  type        = string
-}
-
-variable "support_team" {
-  description = "Owning or Supporting application team"
-  type        = string
-}
-
-variable "vpc_cidr" {
-  description = "CIDR Block for VPC"
-  type        = string
-}
-
-variable "subnet_count" {
-  description = "The number of subnets to create"
-  type        = string
+    description           = "Name of application"
+    default               = "superalgos"
 }
 
 variable "availability_zones" {
-  description = "A list of availability zones to create the subnets in"
-  type        = list(string)
+    description           = "Availability Zones"
+    default               = ["us-east-1a", "us-east-1b", "us-east-1c"]
 }
 
-variable "propagating_vgws" {
-  description = "A list of virtual gateways for route propagation"
-  type        = list(string)
-  default     = []
+variable "domain_name" {
+    description           = "Root domain name, e.x foo.com"
+    default               = "set-the-domain-name.com"
+}
+
+variable "environment" {
+    description           = "Name tag of the Environment"
+    default               = "set-the-environment"
+}
+
+variable "vpc_cidr" {
+    description           = "CIDR Block for VPC"
+    default               = "10.42.0.0/19"
+}
+
+variable "vpn_subdomain" {
+    description           = "Subdomain for client vpn endpoints, creates zone within the root domain, e.x bar for bar.foo.com"
+    default               = "vpn"
+}
+
+variable "application_listen_port" {
+    description           = "The port the aplication listens on"
+    default               = "34248"
+}
+
+variable "application_listen_proto" {
+    description           = "The Protocol the application listens on [e.g tcp/udp]"
+    default               = "tcp"
+}
+
+variable "max-instances" {
+    description           = "Maximum number of application instances"
+    default               = 1
+}
+
+variable "private_subnets" {
+    description           = "List of Private Subnets"
+    default               = ["10.42.128.0/23", "10.42.130.0/23", "10.42.132.0/23"]
+}
+
+variable "public_subnets" {
+    description           = "List of Public Subnets"
+    default               = ["10.42.0.0/23", "10.42.2.0/23", "10.42.4.0/23"]
 }
 
 variable "tags" {
-  description = "A map of tags to assign to resources"
-  type        = map(string)
-  default     = {}
+  description             = "A map of tags to assign to resources"
+  type                    = map(string)
+  default                 = {}
 }
 
 variable "tags_for_resource" {
-  description = "A nested map of tags to assign to specific resource types"
-  type        = map(map(string))
-  default     = {}
-}
-
-# Public subnet variables
-
-variable "map_public_ip_on_launch" {
-  description = "Assign a public IP address to instances launched into these subnets"
-  type        = string
-  default     = false
-}
-
-variable "gateway_id" {
-  description = "The ID of the Internet Gateway to use for routing"
-  type        = string
+  description             = "A nested map of tags to assign to specific resource types"
+  type                    = map(map(string))
+  default                 = {}
 }
