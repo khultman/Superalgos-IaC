@@ -21,7 +21,12 @@ variable "support_team" {
     default = "DLV"
 }
 
-variable "environment" {
+variable "environment_live" {
+    description           = "Name tag of the Environment"
+    default               = "set-the-environment"
+}
+
+variable "environment_paper" {
     description           = "Name tag of the Environment"
     default               = "set-the-environment"
 }
@@ -72,8 +77,8 @@ variable "tags" {
   default                 = {}
 }
 
-variable "tags_for_resource" {
-  description             = "A nested map of tags to assign to specific resource types"
-  type                    = map(map(string))
-  default                 = {}
+
+variable "region" {
+    description           = "Region"
+    default               = "us-east-1"
 }

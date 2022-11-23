@@ -1,30 +1,39 @@
 
-module "networking" {
-    source = "DarkLight-Ventures/Superalgos-IaC/tf/modules/networking"
-    region               = "${var.region}"
-    environment          = "${var.environment}"
-    vpc_cidr             = "${var.vpc_cidr}"
-    public_subnets_cidr  = "${var.public_subnets_cidr}"
-    private_subnets_cidr = "${var.private_subnets_cidr}"
-    availability_zones   = "${local.production_availability_zones}"
+module "vpc" {
+  source                  = "git@github.com:terraform-aws-modules/terraform-aws-vpc.git"
+
+  name                    = "${var.environment}-${var.appname}"
+  
+  cidr                    = "${var.vpc_cidr}"
+  azs                     = "${var.availability_zones}"
+  private_subnets         = "${var.private_subnets}"
+  public_subnets          = "${var.public_subnets}"
+
+  enable_ipv6             = true
+  enable_nat_gateway      = true
+  enable_vpn_gateway      = true
+
+  tags                    = merge(var.tags, lookup(var.tags_for_resource, "aws_vpc", {}))
 }
 
-module "application-loadbalancer" {
-    source = "DarkLight-Ventures/Superalgos-IaC/tf/modules/application-loadbalancer"
-    region               = "${var.region}"
-    environment          = "${var.environment}"
-    application_listen_proto = "${var.application_listen_proto}"
-}
 
-module "bastion" {
-    source = "DarkLight-Ventures/Superalgos-IaC/tf/modules/bastion"
-    region               = "${var.region}"
-    environment          = "${var.environment}"
-}
 
-module "vpn" {
-    source = "DarkLight-Ventures/Superalgos-IaC/tf/modules/vpn"
-    region               = "${var.region}"
-    environment          = "${var.environment}"
-}
+# module "application-loadbalancer" {
+#     source = "DarkLight-Ventures/Superalgos-IaC/tf/modules/application-loadbalancer"
+#     region               = "${var.region}"
+#     environment          = "${var.environment}"
+#     application_listen_proto = "${var.application_listen_proto}"
+# }
+
+# module "bastion" {
+#     source = "DarkLight-Ventures/Superalgos-IaC/tf/modules/bastion"
+#     region               = "${var.region}"
+#     environment          = "${var.environment}"
+# }
+
+# module "vpn" {
+#     source = "DarkLight-Ventures/Superalgos-IaC/tf/modules/vpn"
+#     region               = "${var.region}"
+#     environment          = "${var.environment}"
+# }
 
