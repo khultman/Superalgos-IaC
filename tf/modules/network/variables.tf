@@ -19,7 +19,7 @@ variable "environment" {
 
 variable "vpc_cidr" {
     description           = "CIDR Block for VPC"
-    default               = "10.42.0.0/19"
+    default               = "10.40.0.0/14"
 }
 
 variable "vpn_subdomain" {
@@ -39,20 +39,11 @@ variable "application_listen_proto" {
 
 variable "subnets" {
     description           = "Map of the subnets to be created"
-    type                  = map(map(string, string))
+    type                  = map()
     default               = {
-        "public"          = {
-            "cidr_bits"   = "23"
-            "count"       = "3"
-            }
-        "application"     = {
-            "cidr_bits"   = "23"
-            "count"       = "3"
-        }
-        "bastion"         = {
-            "cidr_bits"   = "23"
-            "count"       = "3"
-        }
+        "public"          = "10.40"
+        "application"     = "10.41"
+        "bastion"         = "10.42"
     }
 }
 
@@ -67,15 +58,15 @@ locals {
 locals {
     public_subnets = [
         for az in local.availability_zones : 
-            "${lookup(var.subnets, "public")}.${local.cidr_c_private_subnets + index(local.availability_zones, az)}.0/${lookup(var.subnets)}"
+            "${lookup(var.subnets, "public")}.${index(local.availability_zones, az)}.0/24}"
         ]
     application_subnets = [
         for az in local.availability_zones : 
-            "${lookup(var.cidr_ab, "application")}.${local.cidr_c_database_subnets + index(local.availability_zones, az)}.0/24"
+            "${lookup(var.cidr_ab, "application")}.${index(local.availability_zones, az)}.0/24"
         ]
     bastion_subnets = [
         for az in local.availability_zones : 
-            "${lookup(var.cidr_ab, "bastion")}.${local.cidr_c_public_subnets + index(local.availability_zones, az)}.0/24"
+            "${lookup(var.cidr_ab, "bastion")}.${index(local.availability_zones, az)}.0/24"
         ]
 }
 

@@ -6,17 +6,15 @@ availability_zones        = ["us-east-1a", "us-east-1b", "us-east-1c"]
 
 domain_name               = "darklightventures.com"
 
-vpc_cidr                  = "10.42.0.0/19"
-private_subnets           = ["10.42.128.0/23", "10.42.130.0/23", "10.42.132.0/23"]
-public_subnets            = ["10.42.0.0/23", "10.42.2.0/23", "10.42.4.0/23"]
+
+vpc_cidr                  = "10.40.0.0/14"
 
 
 vpn_subdomain             = "vpn"
 
 
 application_listen_port   = "34248"
-
-application_listen_proto  = "tcp"
+websocket_listen_port     = "18041"
 
 
 environment_live          = "live"
