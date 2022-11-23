@@ -16,8 +16,8 @@ LABEL org.label-schema.build-date=$BUILD_DATE
 LABEL org.label-schema.name=$IMAGE_NAME
 LABEL org.label-schema.version=$BUILD_VERSION
 
-# Install basic requirements: curl, git, golang, make
-RUN apk add --update --no-cache curl git gcc go make musl-dev
+# Install basic requirements: aws-cli curl, git, golang, make
+RUN apk add --update --no-cache aws-clie curl git gcc go make musl-dev
 
 # Install Terraform
 RUN wget https://releases.hashicorp.com/terraform/${TERRAFORM_RELEASE}/terraform_${TERRAFORM_RELEASE}_linux_${ARCH}.zip
