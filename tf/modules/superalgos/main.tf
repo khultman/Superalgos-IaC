@@ -1,10 +1,8 @@
 
 module "network" {
   source                  = "../network"
-  name                    = "${var.environment}-${var.appname}"
+  #name                    = "${var.environment}-${var.appname}"
   vpc_cidr                = "${var.vpc_cidr}"
-  private_subnets         = "${var.private_subnets}"
-  public_subnets          = "${var.public_subnets}"
   tags                    = "${var.tags}"
   tags_for_resource       = "${var.tags_for_resource}"
 }

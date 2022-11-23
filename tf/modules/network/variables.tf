@@ -19,7 +19,7 @@ variable "environment" {
 
 variable "vpc_cidr" {
     description           = "CIDR Block for VPC"
-    default               = "10.40.0.0/14"
+    default               = "10.42.0.0/16"
 }
 
 variable "vpn_subdomain" {
@@ -37,9 +37,24 @@ variable "application_listen_proto" {
     default               = "tcp"
 }
 
+variable "application_subnet_cidr" {
+    description           = "Private subnet cidr block"
+    default               = "10.42.0.0/19"
+}
+
+variable "bastion_subnet_cidr" {
+    description           = "Public subnet cidr block"
+    default               = "10.41.32.0/19"
+}
+
+variable "public_subnet_cidr" {
+    description           = "Public subnet cidr block"
+    default               = "10.40.64.0/19"
+}
+
 variable "subnets" {
     description           = "Map of the subnets to be created"
-    type                  = map()
+    type                  = map(string)
     default               = {
         "public"          = "10.40"
         "application"     = "10.41"
@@ -62,11 +77,11 @@ locals {
         ]
     application_subnets = [
         for az in local.availability_zones : 
-            "${lookup(var.cidr_ab, "application")}.${index(local.availability_zones, az)}.0/24"
+            "${lookup(var.subnets, "application")}.${index(local.availability_zones, az)}.0/24"
         ]
     bastion_subnets = [
         for az in local.availability_zones : 
-            "${lookup(var.cidr_ab, "bastion")}.${index(local.availability_zones, az)}.0/24"
+            "${lookup(var.subnets, "bastion")}.${index(local.availability_zones, az)}.0/24"
         ]
 }
 

@@ -17,10 +17,7 @@ module "vpc" {
 module "private_subnets" {
   source                  = "Darklight-Ventures/terraform//modules/platform/aws/networking/private-subnets"
   vpc_id                  = module.vpc.vpc_id
-  vpc_id                  = module.vpc.vpc_id
-  gateway_id              = module.vpc.internet_gateway_id
-  map_public_ip_on_launch = true
-  cidr_block              = "10.42.128.0/23"
+  cidr_block              = module.vpc.cidr_block
   subnet_count            = 3
   availability_zones      = ["us-east1-1a", "us-east1-1b", "us-east1-1c"]
 }

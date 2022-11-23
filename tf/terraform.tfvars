@@ -7,7 +7,10 @@ availability_zones        = ["us-east-1a", "us-east-1b", "us-east-1c"]
 domain_name               = "darklightventures.com"
 
 
-vpc_cidr                  = "10.40.0.0/14"
+vpc_cidr                  = "10.42.0.0/16"
+application_subnet_cidr   = "10.42.0.0/19"
+bastion_subnet_cidr       = "10.42.32.0/19"
+private_subnet_cidr       = "10.42.64.0/19"
 
 
 vpn_subdomain             = "vpn"
