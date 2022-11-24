@@ -17,7 +17,10 @@ Internet facing application load balancer and aws cognito.
 
 ### Instances
 
-EC2 Nodes have been chosen to host the instance on.
+* EC2 Nodes have been chosen to host the instance on.
+* EBS Volumes will be attached to each node
+  * Storage will be set to persist allowing it to be re-used or inspected
+ 
 
 #### Considerations
 
@@ -47,4 +50,9 @@ Both EC2 and Fargate backed ECS
 | Cost effective      | |
 
 
+### Management Access
+
+* A client vpn will be established to the bastion subnets
+* SSH access to the `bastion` host security group will be permitted from the client vpn source address
+* Application Security Group will permit SSH access from the Bastion Security Group
 
