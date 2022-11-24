@@ -7,7 +7,7 @@ It is very much a prototype, not functional, and a work in progress.
 
 ## Design
 
-![Architecture Diagram](diagram-paper-us-east-1.png)
+![Architecture Diagram](design/diagram-paper-us-east-1.png)
 
 
 ### Authentication
@@ -28,26 +28,23 @@ considered for this design:
 
 Both EC2 and Fargate backed EKS
 
-***Pros:*** 
-* Flexible
-* Easy to manage
-* Extremely Scalable
+| PROs                | CONs  |
+|---------------------|-------| 
+| Flexible            | Cost  |
+| Easy to manage      |       |
+| Extremely Scalable  |       |
 
-***Cons:***
-* Cost at low scale far outweighs any benefits
 
 ##### ECS
 
 Both EC2 and Fargate backed ECS
 
-***Pros:***
-* Flexible
-* Easy to manage
-* Scalable
-* Cost effective
+| PROs | CONs |
+|---------------------|------------------------------------| 
+| Flexible            | Lack of control                    |
+| Easy to manage      | Limited persistent storage options |
+| Scalable            | |
+| Cost effective      | |
 
-***Cons:***
-* Lack of control
-* Limited persistent storage options
 
 

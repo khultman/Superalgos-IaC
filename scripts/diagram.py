@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+import argparse
+import sys
+
 from diagrams import Cluster, Diagram, Edge
 from diagrams.aws.compute import EC2
 from diagrams.aws.general import InternetGateway
@@ -64,9 +69,6 @@ sa_instance_mapping = [
     for i in range(1, sa_instances+1)
 ]
 
-print(sa_instance_mapping)
-
-
 
 
 # Shortcut functions for pre-defined line styles
@@ -95,67 +97,117 @@ def solidRed(label="", color="firebrick", style="solid"):
 
 
 
+def makeDiagrams(out_dir: str = '.'):
+    for environment, region in zip(environments, regions):
+        fqdn = f"{environment}.{sa_subdomain}.{region}.{sa_TLD}"
+        with Diagram("Superalgos IaC", filename=f"{out_dir}/diagram-{environment}-{region}", outformat="png"):
+            user = User("User")
+            
+            #
+            with Cluster(f"AWS Account: {aws_account_alias}"):
+                    with Cluster(f"Region: {region}"):
+                        cognito = Cognito("AWS Cognito")
+                        vpn_endpoint = ClientVpn(f"{vpn_subdomain}.{fqdn}")
+                        #
+                        with Cluster("Superalgos VPC"):
+                            subnet_application = Cluster("Application Subnet")
+                            subnet_bastion = Cluster("Bastion Subnet")
+                            subnet_public = Cluster("Public Subnet")
 
+                            with subnet_public:
+                                igw = InternetGateway("igw")
+                                sg_alb = Cluster("SG: ALB")
+                                with sg_alb:
+                                    external_lb = ALB("Internet-Facing ALB")
+                                    
+                            #
+                            with subnet_bastion:
+                                sg_bastion = Cluster("SG: Bastion")
+                                with sg_bastion:
+                                    bastion = EC2("Bastion Host")
+                            #
+                            with subnet_application:
+                                sg_sa_nodes = Cluster("SG: SA Nodes")
+                                sg_internal_lb = Cluster("SG: Internal LB")
 
+                                with sg_internal_lb:
+                                    internal_lb = ALB("Internal ALB")
 
-
-
-for environment, region in zip(environments, regions):
-    fqdn = f"{environment}.{sa_subdomain}.{region}.{sa_TLD}"
-    with Diagram("Superalgos IaC", filename=f"diagram-{environment}-{region}", outformat="png"):
-        user = User("User")
-        
-        #
-        with Cluster(f"AWS Account: {aws_account_alias}"):
-                with Cluster(f"Region: {region}"):
-                    cognito = Cognito("AWS Cognito")
-                    vpn_endpoint = ClientVpn(f"{vpn_subdomain}.{fqdn}")
-                    #
-                    with Cluster("Superalgos VPC"):
-                        subnet_application = Cluster("Application Subnet")
-                        subnet_bastion = Cluster("Bastion Subnet")
-                        subnet_public = Cluster("Public Subnet")
-
-                        with subnet_public:
-                            igw = InternetGateway("igw")
-                            sg_alb = Cluster("SG: ALB")
-                            with sg_alb:
-                                external_lb = ALB("Internet-Facing ALB")
+                                with sg_sa_nodes:
+                                    app_instances = [
+                                        saInstance(f"{i.get('idx')}.{fqdn}")
+                                        for i in sa_instance_mapping
+                                    ]
+                                    # app_instances - app_ebs_volumes
                                 
+                                app_instances[0] >> solidGreen(f"Internal unsecured WS and HTTP Communication:\n`ws://{fqdn}:{sa_ws_port}[+NodeIndex]`\n`http://{fqdn}:{sa_app_port}[+NodeIndex]`") >> internal_lb
+                                internal_lb >> solidGreen(f"Internal traffic hairpin") >> app_instances[-1]
                         #
-                        with subnet_bastion:
-                            sg_bastion = Cluster("SG: Bastion")
-                            with sg_bastion:
-                                bastion = EC2("Bastion Host")
-                        #
-                        with subnet_application:
-                            sg_sa_nodes = Cluster("SG: SA Nodes")
-                            sg_internal_lb = Cluster("SG: Internal LB")
+                        for idx, i in enumerate(sa_instance_mapping):
+                            print(idx)
+                            app_instances[idx] - ElasticBlockStoreEBSVolume(f"sa_ebs_{i.get('idx')}")
+            #
+            user >> dashedRed(f"https://{environment}.{sa_subdomain}.{sa_TLD}:{sa_tls_port}") >> igw >> dashedRed() >> external_lb
 
-                            with sg_internal_lb:
-                                internal_lb = ALB("Internal ALB")
+            external_lb >> solidRed("Authenticate and Authorize User") >> cognito 
+            cognito >> dottedGreen("Authorized") >> external_lb
 
-                            with sg_sa_nodes:
-                                app_instances = [
-                                    saInstance(f"{i.get('idx')}.{fqdn}")
-                                    for i in sa_instance_mapping
-                                ]
-                                # app_instances - app_ebs_volumes
-                            
-                            app_instances[0] >> solidGreen(f"Internal unsecured WS and HTTP Communication:\n`ws://{fqdn}:{sa_ws_port}[+NodeIndex]`\n`http://{fqdn}:{sa_app_port}[+NodeIndex]`") >> internal_lb
-                            internal_lb >> solidGreen(f"Internal traffic hairpin") >> app_instances[-1]
-                    #
-                    for idx, i in enumerate(sa_instance_mapping):
-                        print(idx)
-                        app_instances[idx] - ElasticBlockStoreEBSVolume(f"sa_ebs_{i.get('idx')}")
-        #
-        user >> dashedRed(f"https://{environment}.{sa_subdomain}.{sa_TLD}:{sa_tls_port}") >> igw >> dashedRed() >> external_lb
+            external_lb >> boldGreen("Authorized Responses") >> igw >> boldGreen("Authorized Responses") >> user
 
-        external_lb >> solidRed("Authenticate and Authorize User") >> cognito 
-        cognito >> dottedGreen("Authorized") >> external_lb
 
-        external_lb >> boldGreen("Authorized Responses") >> igw >> boldGreen("Authorized Responses") >> user
 
+class ArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        sys.stderr.write("error: %s" % message)
+        self.print_help()
+        sys.exit(2)
+
+
+def build_program_parser() -> ArgumentParser:
+    """
+    Parse program arguments
+    Usage:
+        args = program_arguments()
+    """
+
+    # Main parser
+    parser = ArgumentParser(
+        description="Generate Architecture Diagrams",
+        exit_on_error=True,
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        default=False,
+        help="Increase logging verbosity to debug",
+    )
+
+    parser.add_argument(
+        "-o",
+        "--output",
+        action="store",
+        default=".",
+        dest="directory",
+        help="The directory to output the generated diagram files",
+    )
+
+    return parser
+
+
+def main(args: argparse.Namespace) -> None:
+    """
+    Main program logic
+    """
+    makeDiagrams(out_dir=args.directory)
+
+
+if __name__ == "__main__":
+    parser = build_program_parser()
+    args = parser.parse_args()
+    main(args)
 
 
 
