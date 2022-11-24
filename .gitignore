@@ -1,4 +1,5 @@
 
+# Environment Variables for use in docker image
 .env
 
 
