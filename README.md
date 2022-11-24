@@ -4,3 +4,5 @@ This project is designed to deploy the Superalgos project securely to aws
 
 It is very much a prototype, not functional, and a work in progress.
 
+
+![Architecture Diagram](diagram-paper-us-east-1.png)
