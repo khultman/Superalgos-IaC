@@ -4,7 +4,7 @@ appname                   = "superalgos"
 region                    = "us-east-1"
 availability_zones        = ["us-east-1a", "us-east-1b", "us-east-1c"]
 
-domain_name               = "darklightventures.com"
+domain_name               = "set-the-domain-name.com"
 
 
 vpc_cidr                  = "10.42.0.0/16"
@@ -24,4 +24,4 @@ environment_live          = "live"
 environment_paper         = "paper"
 
 
-tags                      = {"support_team" = "DLV"}
+tags                      = {"support_team" = "Support Team"}
