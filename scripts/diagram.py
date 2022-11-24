@@ -52,6 +52,10 @@ sa_tls_port = 443
 # sa_ws_port = 18041
 sa_ws_port = 18041
 
+# Set this to the desired ssh port
+# ssh_port
+ssh_port = 22
+
 # Set this to the subdomain of the vpn
 # vpn_subdomain = "vpn"
 vpn_subdomain = "vpn"
@@ -147,12 +151,19 @@ def makeDiagrams(out_dir: str = '.'):
                             print(idx)
                             app_instances[idx] - ElasticBlockStoreEBSVolume(f"sa_ebs_{i.get('idx')}")
             #
-            user >> dashedRed(f"https://{environment}.{sa_subdomain}.{sa_TLD}:{sa_tls_port}") >> igw >> dashedRed() >> external_lb
+            user >> dashedRed(f"https://{fqdn}") >> igw >> dashedRed() >> external_lb
 
             external_lb >> solidRed("Authenticate and Authorize User") >> cognito 
             cognito >> dottedGreen("Authorized") >> external_lb
 
             external_lb >> boldGreen("Authorized Responses") >> igw >> boldGreen("Authorized Responses") >> user
+
+            external_lb >> solidGreen("Authenticated Traffic") >> app_instances
+
+            user >> solidRed(f"Establish Client VPN") >> vpn_endpoint
+            vpn_endpoint >> solidRed(f"ssh://<bastion>.{fqdn}:{ssh_port}") >> bastion
+            bastion >> solidRed(f"ssh://<instance>.{fqdn}:{ssh_port}") >> app_instances
+
 
 
 
