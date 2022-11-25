@@ -57,9 +57,35 @@ sa_ws_port = 18041
 # ssh_port
 ssh_port = 22
 
+# The CIDR block of the vpc, this should a /16
+# vpc_cidr = "10.42.0.0/16"
+vpc_cidr = "10.42.0.0/16"
+
+# The application subnets CIDR block, this should be large enough
+# to yield a /24 per availability zone - recommendation is a /19 or /20
+# application_subnet_cidr = "10.42.0.0/19"
+application_subnet_cidr = "10.42.0.0/19"
+
+# The bastion subnets CIDR block, this should be large enough
+# to yield a /24 per availability zone - recommendation is a /19 or /20
+# bastion_subnet_cidr = "10.42.32.0/19"
+bastion_subnet_cidr = "10.42.32.0/19"
+
+# The public subnets CIDR block, this should be large enough
+# to yield a /24 per availability zone - recommendation is a /19 or /20
+# public_subnet_cidr = "10.42.64.0/19"
+public_subnet_cidr = "10.42.64.0/19"
+
 # Set this to the subdomain of the vpn
 # vpn_subdomain = "vpn"
 vpn_subdomain = "vpn"
+
+# The vpn client subnets CIDR block, this should be large at least
+# twice the size as required client connections [cite](https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/what-is.html#what-is-limitations)
+# and at least a /22 and no larger than a /12
+# Recommendation is a /19 or /20 for consistency
+# public_subnet_cidr = "10.42.64.0/19"
+vpn_subnet_cidr = "10.42.96.0/19"
 
 
 # This will generate a mapping of instance details which will be used later
@@ -107,7 +133,11 @@ def solidRed(label="", color="firebrick", style="solid"):
 
 def makeDiagrams(out_dir: str = '.'):
     for environment, region in zip(environments, regions):
+        # The fully qualified domain name that will be appended
         fqdn = f"{environment}.{sa_subdomain}.{region}.{sa_TLD}"
+        # ################
+        # Overview Diagram
+        # ################
         with Diagram("Superalgos IaC", filename=f"{out_dir}/diagram-{environment}-{region}", outformat="png"):
             internet = Internet("Public Internet")
             user = User("User")
@@ -120,10 +150,10 @@ def makeDiagrams(out_dir: str = '.'):
                         s3_bastion = S3(f"bastion-logs.{fqdn}")
                         vpn_endpoint = ClientVpn(f"{vpn_subdomain}.{fqdn}")
                         #
-                        with Cluster("Superalgos VPC"):
-                            subnet_application = Cluster("Application Subnet")
-                            subnet_bastion = Cluster("Bastion Subnet")
-                            subnet_public = Cluster("Public Subnet")
+                        with Cluster(f"Superalgos VPC :: {vpc_cidr}"):
+                            subnet_application = Cluster(f"Application Subnet :: {application_subnet_cidr}")
+                            subnet_bastion = Cluster(f"Bastion Subnet :: {bastion_subnet_cidr}")
+                            subnet_public = Cluster(f"Public Subnet :: {public_subnet_cidr}")
 
                             with subnet_public:
                                 igw = InternetGateway("igw")
