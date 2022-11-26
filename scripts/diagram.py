@@ -133,7 +133,95 @@ def solidRed(label="", color="firebrick", style="solid"):
 
 #
 
-def infrastructure(elements, region, fqdn):
+def authTrafficFlow(environment, region, fqdn, out_dir: str = '.'):
+    with Diagram("Superalgos IaC", filename=f"{out_dir}/diagram-authentication-{environment}-{region}", outformat="png", show=False):
+        elements = {}
+        authTrafficInfrastructure(elements=elements, region=region, fqdn=fqdn)
+        # User -> Application traffic flow
+        elements["user"] >> solidRed(f"1: Establish Client VPN") >> elements["internet"] >> solidRed(f"1: Establish Client VPN") >> elements["vpn_endpoint"] >> solidRed(f"1: Establish Client VPN") >> elements["vpn_connection"]
+        #
+        elements["vpn_connection"] >> dashedRed(f"2: Request https://{fqdn}") >> elements["external_lb"]
+        #
+        elements["external_lb"] >> solidRed("3: Authenticate and Authorize User") >> elements["cognito"] 
+        elements["cognito"] >> dottedGreen("4: Valid Authorization Response") >> elements["external_lb"]
+        #
+        elements["external_lb"] >> solidGreen("5: Authenticated Traffic Flow to backend") >> elements["app_instances"]
+        elements["app_instances"] >> solidGreen("6: Application Response") >> elements["external_lb"]
+        elements["external_lb"] >> solidGreen("7: ALB Application Response to user") >> elements["vpn_connection"] >> solidGreen("7: ALB Application Response to user") >> elements["vpn_endpoint"] >> solidGreen("7: ALB Application Response to user") >> elements["internet"] >> solidGreen("7: ALB Application Response to user") >> elements["user"]
+        # Application Internal Traffic Routing
+        elements["app_instances"][0] >> solidGreen(f"8: Internal unsecured WS and HTTP Communication:\n`ws://{fqdn}:{sa_ws_port}[+NodeIndex]`\n`http://{fqdn}:{sa_app_port}[+NodeIndex]`") >> elements["internal_lb"]
+        elements["internal_lb"] >> solidGreen(f"9: Internal traffic hairpin") >> elements["app_instances"][-1]
+        # Application Logging
+        elements["external_lb"] >> dashedRed("10: Access Logs :: ALB/Application") >> elements["cloud_watch"] >> dashedRed("10: Access Logs Read-Only Storage :: ALB/Application") >> elements["s3_access"]
+        # VPN Access Logs
+        elements["vpn_endpoint"] >> dashedRed("10: Access Logs :: VPN Client ") >> elements["cloud_watch"] >> dashedRed("10: Access Logs Read-Only Storage :: VPN Client") >> elements["s3_vpnlogs"]
+        
+
+
+def authTrafficInfrastructure(elements, region, fqdn):
+    elements["aws_account_cluster"] = Cluster(f"AWS Account: {aws_account_alias}")
+    elements["internet"] = Internet("Public Internet")
+    elements["user"] = User("User")
+    with elements["aws_account_cluster"]:
+        elements["region"] = Cluster(f"Region: {region}")
+        with elements["region"]:
+            elements["cloud_watch"] = Cloudwatch("AWS Cloudwatch")
+            elements["cognito"] = Cognito("AWS Cognito")
+            elements["s3_access"] = S3(f"access-logs.{fqdn}")
+            elements["s3_vpnlogs"] = S3(f"vpn-logs.{fqdn}")
+            elements["vpn_endpoint"] = ClientVpn(f"{vpn_subdomain}.{fqdn}")
+            elements["vpc_sa"] = Cluster(f"Superalgos VPC :: {vpc_cidr}")
+            #
+            with elements["vpc_sa"]:
+                elements["subnet_application"] = Cluster(f"Application Subnet :: {application_subnet_cidr}")
+                elements["subnet_public"] = Cluster(f"Public Subnet :: {public_subnet_cidr}")
+                elements["subnet_vpn"] = Cluster(f"VPN Subnet :: {vpn_subnet_cidr}")
+                # Public Subnet Objectes
+                with elements["subnet_public"]:
+                    elements["sg_alb"] = Cluster("SG: ALB")
+                    with elements["sg_alb"]:
+                        elements["external_lb"] = ALB("VPN-Facing ALB")
+                # Application Subnet Object
+                with elements["subnet_application"]:
+                    elements["ngw_sa_nodes"] = NATGateway("NatGW: SA Nodes")
+                    elements["sg_sa_nodes"] = Cluster("SG: Superalgos Nodes")
+                    elements["sg_internal_lb"] = Cluster("SG: Internal LB")
+                    # SG: Internal LB Object
+                    with elements["sg_internal_lb"]:
+                        elements["internal_lb"] = ALB("Internal ALB")
+                    # SG: SA Nodes Object
+                    with elements["sg_sa_nodes"]:
+                        elements["app_instances"] = [
+                            saInstance(f"{i.get('idx')}.{fqdn}")
+                            for i in sa_instance_mapping
+                        ]
+                # VPN Subnet Object
+                with elements["subnet_vpn"]:
+                    elements["vpn_connection"] = VpnConnection("Client VPN Connection")
+            # Add connections from each SA Node to an EBS Volume
+            for idx, i in enumerate(sa_instance_mapping):
+                elements["app_instances"][idx] - ElasticBlockStoreEBSVolume(f"sa_ebs_{i.get('idx')}")
+
+
+def managementTrafficFlow(environment, region, fqdn, out_dir: str = '.'):
+    with Diagram("Superalgos IaC - Management Traffic", filename=f"{out_dir}/diagram-management-{environment}-{region}", outformat="png", show=False):
+        elements = {}
+        managementInfrastructure(elements=elements, region=region, fqdn=fqdn)
+        # User -> SSH Managment traffic flow
+        elements["user"] >> solidRed(f"1: Establish Client VPN") >> elements["internet"] >> solidRed(f"1: Establish Client VPN") >> elements["vpn_endpoint"] >> solidRed(f"1: Establish Client VPN") >> elements["vpn_connection"]
+        elements["vpn_connection"] >> solidRed(f"2: SSH to Bastion Host :: ssh://<bastion>.{fqdn}:{ssh_port}") >> elements["bastion"]
+        elements["bastion"] >> solidRed(f"3: SSH from Bastion to Superalgos Nodes :: ssh://<instance>.{fqdn}:{ssh_port}") >> elements["app_instances"]
+        # Application egress for updates
+        elements["app_instances"] >> solidBlue("4: Outbout Internet Traffic") >> elements["ngw_sa_nodes"] >> solidBlue("4: Outbout Internet Traffic") >> elements["igw"]
+        elements["bastion"] >> solidBlue("4: Outbout Internet Traffic") >> elements["ngw_bastion"] >> solidBlue("4: Outbout Internet Traffic") >> elements["igw"]
+        elements["igw"] >> solidBlue("4: Outbout Internet Traffic") >> elements["internet"]
+        # Bastion Access Logs
+        elements["bastion"] >> dashedRed("5: Access Logs :: Bastion") >> elements["cloud_watch"] >> dashedRed("6: Access Logs Read-Only Storage :: Bastion") >> elements["s3_bastion"]
+        # VPN Access Logs
+        elements["vpn_endpoint"] >> dashedRed("5: Access Logs :: VPN Client") >> elements["cloud_watch"] >> dashedRed("6: Access Logs Read-Only Storage :: VPN Client") >> elements["s3_vpnlogs"]
+
+
+def managementInfrastructure(elements, region, fqdn):
     elements["aws_account_cluster"] = Cluster(f"AWS Account: {aws_account_alias}")
     elements["internet"] = Internet("Public Internet")
     elements["user"] = User("User")
@@ -142,8 +230,6 @@ def infrastructure(elements, region, fqdn):
         elements["region"] = Cluster(f"Region: {region}")
         with elements["region"]:
             elements["cloud_watch"] = Cloudwatch("AWS Cloudwatch")
-            elements["cognito"] = Cognito("AWS Cognito")
-            elements["s3_access"] = S3(f"access-logs.{fqdn}")
             elements["s3_bastion"] = S3(f"bastion-logs.{fqdn}")
             elements["s3_vpnlogs"] = S3(f"vpn-logs.{fqdn}")
             elements["vpn_endpoint"] = ClientVpn(f"{vpn_subdomain}.{fqdn}")
@@ -157,9 +243,6 @@ def infrastructure(elements, region, fqdn):
                 # Public Subnet Objectes
                 with elements["subnet_public"]:
                     elements["igw"] = InternetGateway("igw")
-                    elements["sg_alb"] = Cluster("SG: ALB")
-                    with elements["sg_alb"]:
-                        elements["external_lb"] = ALB("Internet-Facing ALB")
                 # Bastion Subnet Object
                 with elements["subnet_bastion"]:
                     elements["ngw_bastion"] = NATGateway("NatGW: Bastion Subnets")
@@ -169,7 +252,7 @@ def infrastructure(elements, region, fqdn):
                 # Application Subnet Object
                 with elements["subnet_application"]:
                     elements["ngw_sa_nodes"] = NATGateway("NatGW: SA Nodes")
-                    elements["sg_sa_nodes"] = Cluster("SG: SA Nodes")
+                    elements["sg_sa_nodes"] = Cluster("SG: Superalgos Nodes")
                     elements["sg_internal_lb"] = Cluster("SG: Internal LB")
                     # SG: Internal LB Object
                     with elements["sg_internal_lb"]:
@@ -197,35 +280,12 @@ def makeDiagrams(out_dir: str = '.'):
         # ################
         # Overview Diagram
         # ################
-        with Diagram("Superalgos IaC", filename=f"{out_dir}/diagram-authentication-{environment}-{region}", outformat="png", show=False):
-            elements = {}
-            infrastructure(elements=elements, region=region, fqdn=fqdn)
-            # User -> Application traffic flow
-            elements["user"] >> dashedRed(f"https://{fqdn}") >> elements["internet"] >> dashedRed() >> elements["igw"] >> dashedRed() >> elements["external_lb"]
-            elements["external_lb"] >> solidRed("Authenticate and Authorize User") >> elements["cognito"] 
-            elements["cognito"] >> dottedGreen("Authorized") >> elements["external_lb"]
-            elements["external_lb"] >> boldGreen("Authorized Responses") >> elements["igw"] >> boldGreen() >> elements["internet"] >> boldGreen("Authorized Responses") >> elements["user"]
-            elements["external_lb"] >> solidGreen("Authenticated Traffic") >> elements["app_instances"]
-            # Application Internal Traffic Routing
-            elements["app_instances"][0] >> solidGreen(f"Internal unsecured WS and HTTP Communication:\n`ws://{fqdn}:{sa_ws_port}[+NodeIndex]`\n`http://{fqdn}:{sa_app_port}[+NodeIndex]`") >> elements["internal_lb"]
-            elements["internal_lb"] >> solidGreen(f"Internal traffic hairpin") >> elements["app_instances"][-1]
+        authTrafficFlow(environment=environment, region=region, fqdn=fqdn, out_dir=out_dir)
+
+        # Management Traffic
+        managementTrafficFlow(environment=environment, region=region, fqdn=fqdn, out_dir=out_dir)
     
-    with Diagram("Superalgos IaC - Management Traffic", filename=f"{out_dir}/diagram-{environment}-{region}-management", outformat="png", show=False):
-            elements = {}
-            infrastructure(elements=elements, region=region, fqdn=fqdn)
-            # User -> SSH Managment traffic flow
-            elements["user"] >> solidRed(f"Establish Client VPN") >> elements["internet"] >> solidRed() >> elements["vpn_endpoint"] >> solidRed() >> elements["vpn_connection"]
-            elements["vpn_connection"] >> solidRed(f"ssh://<bastion>.{fqdn}:{ssh_port}") >> elements["bastion"]
-            elements["bastion"] >> solidRed(f"ssh://<instance>.{fqdn}:{ssh_port}") >> elements["app_instances"]
-            # Application egress for updates
-            elements["app_instances"] >> solidBlue("Outbout Internet Traffic") >> elements["ngw_sa_nodes"] >> solidBlue() >> elements["igw"] >> solidBlue() >> elements["internet"]
-            elements["bastion"] >> solidBlue("Outbout Internet Traffic") >> elements["ngw_bastion"] >> solidBlue() >> elements["igw"] >> solidBlue() >> elements["internet"]
-            # Bastion Access Logs
-            elements["bastion"] >> elements["cloud_watch"] >> dashedRed("Bastion Logs") >> elements["s3_bastion"]
-            # External Loadbalancer Access Logs
-            elements["external_lb"] >> elements["cloud_watch"] >> dashedRed("ALB Access Logs") >> elements["s3_access"]
-            # VPN Access Logs
-            elements["vpn_endpoint"] >> elements["cloud_watch"] >> dashedRed("VPN Access Logs") >> elements["s3_vpnlogs"]
+    
 
 
 

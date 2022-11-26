@@ -7,7 +7,12 @@ It is very much a prototype, not functional, and a work in progress.
 
 ## Design
 
-![Architecture Diagram](design/diagram-paper-us-east-1.png)
+### Authentication and Application Traffic Flow
+![Authentication and Application Traffic Flow](design/diagram-authentication-paper-us-east-1.png)
+
+### Management Traffic Flow
+![Management Traffic Flow](design/diagram-management-paper-us-east-1.png)
+
 
 
 ### Authentication
