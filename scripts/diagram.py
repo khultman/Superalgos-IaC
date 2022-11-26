@@ -7,7 +7,7 @@ from diagrams import Cluster, Diagram, Edge
 from diagrams.aws.compute import EC2
 from diagrams.aws.general import InternetGateway
 from diagrams.aws.management import AutoScaling, Cloudwatch
-from diagrams.aws.network import ALB, ClientVpn, NATGateway
+from diagrams.aws.network import ALB, ClientVpn, NATGateway, VpnConnection
 from diagrams.aws.security import Cognito
 from diagrams.aws.storage  import ElasticBlockStoreEBSVolume, S3
 from diagrams.onprem.client import User
@@ -131,6 +131,65 @@ def solidRed(label="", color="firebrick", style="solid"):
 
 
 
+#
+
+def infrastructure(elements, region, fqdn):
+    elements["aws_account_cluster"] = Cluster(f"AWS Account: {aws_account_alias}")
+    elements["internet"] = Internet("Public Internet")
+    elements["user"] = User("User")
+
+    with elements["aws_account_cluster"]:
+        elements["region"] = Cluster(f"Region: {region}")
+        with elements["region"]:
+            elements["cloud_watch"] = Cloudwatch("AWS Cloudwatch")
+            elements["cognito"] = Cognito("AWS Cognito")
+            elements["s3_access"] = S3(f"access-logs.{fqdn}")
+            elements["s3_bastion"] = S3(f"bastion-logs.{fqdn}")
+            elements["s3_vpnlogs"] = S3(f"vpn-logs.{fqdn}")
+            elements["vpn_endpoint"] = ClientVpn(f"{vpn_subdomain}.{fqdn}")
+            elements["vpc_sa"] = Cluster(f"Superalgos VPC :: {vpc_cidr}")
+            #
+            with elements["vpc_sa"]:
+                elements["subnet_application"] = Cluster(f"Application Subnet :: {application_subnet_cidr}")
+                elements["subnet_bastion"] = Cluster(f"Bastion Subnet :: {bastion_subnet_cidr}")
+                elements["subnet_public"] = Cluster(f"Public Subnet :: {public_subnet_cidr}")
+                elements["subnet_vpn"] = Cluster(f"VPN Subnet :: {vpn_subnet_cidr}")
+                # Public Subnet Objectes
+                with elements["subnet_public"]:
+                    elements["igw"] = InternetGateway("igw")
+                    elements["sg_alb"] = Cluster("SG: ALB")
+                    with elements["sg_alb"]:
+                        elements["external_lb"] = ALB("Internet-Facing ALB")
+                # Bastion Subnet Object
+                with elements["subnet_bastion"]:
+                    elements["ngw_bastion"] = NATGateway("NatGW: Bastion Subnets")
+                    elements["sg_bastion"] = Cluster("SG: Bastion")
+                    with elements["sg_bastion"]:
+                        elements["bastion"] = EC2("Bastion Host")
+                # Application Subnet Object
+                with elements["subnet_application"]:
+                    elements["ngw_sa_nodes"] = NATGateway("NatGW: SA Nodes")
+                    elements["sg_sa_nodes"] = Cluster("SG: SA Nodes")
+                    elements["sg_internal_lb"] = Cluster("SG: Internal LB")
+                    # SG: Internal LB Object
+                    with elements["sg_internal_lb"]:
+                        elements["internal_lb"] = ALB("Internal ALB")
+                    # SG: SA Nodes Object
+                    with elements["sg_sa_nodes"]:
+                        elements["app_instances"] = [
+                            saInstance(f"{i.get('idx')}.{fqdn}")
+                            for i in sa_instance_mapping
+                        ]
+                # VPN Subnet Object
+                with elements["subnet_vpn"]:
+                    elements["vpn_connection"] = VpnConnection("Client VPN Connection")
+            # Add connections from each SA Node to an EBS Volume
+            for idx, i in enumerate(sa_instance_mapping):
+                elements["app_instances"][idx] - ElasticBlockStoreEBSVolume(f"sa_ebs_{i.get('idx')}")
+
+#
+
+
 def makeDiagrams(out_dir: str = '.'):
     for environment, region in zip(environments, regions):
         # The fully qualified domain name that will be appended
@@ -138,74 +197,37 @@ def makeDiagrams(out_dir: str = '.'):
         # ################
         # Overview Diagram
         # ################
-        with Diagram("Superalgos IaC", filename=f"{out_dir}/diagram-{environment}-{region}", outformat="png"):
-            internet = Internet("Public Internet")
-            user = User("User")
-            #
-            with Cluster(f"AWS Account: {aws_account_alias}"):
-                    with Cluster(f"Region: {region}"):
-                        cloud_watch = Cloudwatch("AWS Cloudwatch")
-                        cognito = Cognito("AWS Cognito")
-                        s3_access = S3(f"access-logs.{fqdn}")
-                        s3_bastion = S3(f"bastion-logs.{fqdn}")
-                        vpn_endpoint = ClientVpn(f"{vpn_subdomain}.{fqdn}")
-                        #
-                        with Cluster(f"Superalgos VPC :: {vpc_cidr}"):
-                            subnet_application = Cluster(f"Application Subnet :: {application_subnet_cidr}")
-                            subnet_bastion = Cluster(f"Bastion Subnet :: {bastion_subnet_cidr}")
-                            subnet_public = Cluster(f"Public Subnet :: {public_subnet_cidr}")
+        with Diagram("Superalgos IaC", filename=f"{out_dir}/diagram-authentication-{environment}-{region}", outformat="png", show=False):
+            elements = {}
+            infrastructure(elements=elements, region=region, fqdn=fqdn)
+            # User -> Application traffic flow
+            elements["user"] >> dashedRed(f"https://{fqdn}") >> elements["internet"] >> dashedRed() >> elements["igw"] >> dashedRed() >> elements["external_lb"]
+            elements["external_lb"] >> solidRed("Authenticate and Authorize User") >> elements["cognito"] 
+            elements["cognito"] >> dottedGreen("Authorized") >> elements["external_lb"]
+            elements["external_lb"] >> boldGreen("Authorized Responses") >> elements["igw"] >> boldGreen() >> elements["internet"] >> boldGreen("Authorized Responses") >> elements["user"]
+            elements["external_lb"] >> solidGreen("Authenticated Traffic") >> elements["app_instances"]
+            # Application Internal Traffic Routing
+            elements["app_instances"][0] >> solidGreen(f"Internal unsecured WS and HTTP Communication:\n`ws://{fqdn}:{sa_ws_port}[+NodeIndex]`\n`http://{fqdn}:{sa_app_port}[+NodeIndex]`") >> elements["internal_lb"]
+            elements["internal_lb"] >> solidGreen(f"Internal traffic hairpin") >> elements["app_instances"][-1]
+    
+    with Diagram("Superalgos IaC - Management Traffic", filename=f"{out_dir}/diagram-{environment}-{region}-management", outformat="png", show=False):
+            elements = {}
+            infrastructure(elements=elements, region=region, fqdn=fqdn)
+            # User -> SSH Managment traffic flow
+            elements["user"] >> solidRed(f"Establish Client VPN") >> elements["internet"] >> solidRed() >> elements["vpn_endpoint"] >> solidRed() >> elements["vpn_connection"]
+            elements["vpn_connection"] >> solidRed(f"ssh://<bastion>.{fqdn}:{ssh_port}") >> elements["bastion"]
+            elements["bastion"] >> solidRed(f"ssh://<instance>.{fqdn}:{ssh_port}") >> elements["app_instances"]
+            # Application egress for updates
+            elements["app_instances"] >> solidBlue("Outbout Internet Traffic") >> elements["ngw_sa_nodes"] >> solidBlue() >> elements["igw"] >> solidBlue() >> elements["internet"]
+            elements["bastion"] >> solidBlue("Outbout Internet Traffic") >> elements["ngw_bastion"] >> solidBlue() >> elements["igw"] >> solidBlue() >> elements["internet"]
+            # Bastion Access Logs
+            elements["bastion"] >> elements["cloud_watch"] >> dashedRed("Bastion Logs") >> elements["s3_bastion"]
+            # External Loadbalancer Access Logs
+            elements["external_lb"] >> elements["cloud_watch"] >> dashedRed("ALB Access Logs") >> elements["s3_access"]
+            # VPN Access Logs
+            elements["vpn_endpoint"] >> elements["cloud_watch"] >> dashedRed("VPN Access Logs") >> elements["s3_vpnlogs"]
 
-                            with subnet_public:
-                                igw = InternetGateway("igw")
-                                sg_alb = Cluster("SG: ALB")
-                                with sg_alb:
-                                    external_lb = ALB("Internet-Facing ALB")
-                                    external_lb >> cloud_watch >> dashedRed("ALB Access Logs") >> s3_access
-                                    
-                            #
-                            with subnet_bastion:
-                                ngw_bastion = NATGateway("NatGW: Bastion Subnets")
-                                sg_bastion = Cluster("SG: Bastion")
-                                with sg_bastion:
-                                    bastion = EC2("Bastion Host")
-                                    bastion >> cloud_watch >> dashedRed("Bastion Logs") >> s3_bastion
-                            #
-                            with subnet_application:
-                                ngw_sa_nodes = NATGateway("NatGW: SA Nodes")
-                                sg_sa_nodes = Cluster("SG: SA Nodes")
-                                sg_internal_lb = Cluster("SG: Internal LB")
 
-                                with sg_internal_lb:
-                                    internal_lb = ALB("Internal ALB")
-
-                                with sg_sa_nodes:
-                                    app_instances = [
-                                        saInstance(f"{i.get('idx')}.{fqdn}")
-                                        for i in sa_instance_mapping
-                                    ]
-                                    # app_instances - app_ebs_volumes
-                                
-                                app_instances[0] >> solidGreen(f"Internal unsecured WS and HTTP Communication:\n`ws://{fqdn}:{sa_ws_port}[+NodeIndex]`\n`http://{fqdn}:{sa_app_port}[+NodeIndex]`") >> internal_lb
-                                internal_lb >> solidGreen(f"Internal traffic hairpin") >> app_instances[-1]
-                        #
-                        for idx, i in enumerate(sa_instance_mapping):
-                            app_instances[idx] - ElasticBlockStoreEBSVolume(f"sa_ebs_{i.get('idx')}")
-            #
-            user >> dashedRed(f"https://{fqdn}") >> internet >> dashedRed() >> igw >> dashedRed() >> external_lb
-
-            external_lb >> solidRed("Authenticate and Authorize User") >> cognito 
-            cognito >> dottedGreen("Authorized") >> external_lb
-
-            external_lb >> boldGreen("Authorized Responses") >> igw >> boldGreen() >> internet >> boldGreen("Authorized Responses") >> user
-
-            external_lb >> solidGreen("Authenticated Traffic") >> app_instances
-
-            user >> solidRed(f"Establish Client VPN") >> internet >> solidRed() >> vpn_endpoint
-            vpn_endpoint >> solidRed(f"ssh://<bastion>.{fqdn}:{ssh_port}") >> bastion
-            bastion >> solidRed(f"ssh://<instance>.{fqdn}:{ssh_port}") >> app_instances
-
-            app_instances >> solidBlue("Outbout Internet Traffic") >> ngw_sa_nodes >> solidBlue() >> igw >> solidBlue() >> internet
-            bastion >> solidBlue("Outbout Internet Traffic") >> ngw_bastion >> solidBlue() >> igw >> solidBlue() >> internet
 
 
 
