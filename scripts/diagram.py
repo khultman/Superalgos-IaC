@@ -130,11 +130,21 @@ def solidRed(label="", color="firebrick", style="solid"):
     return Edge(label=label, color=color, style=style)
 
 
+#
+
+def awsAccount(elements):
+    graph_attrs = {
+        "fontsize": 30
+    }
+    elements["aws_account_cluster"] = Cluster(f"AWS Account: {aws_account_alias}")
+    elements["internet"] = Internet("Public Internet")
+    elements["user"] = User("User")
+
 
 #
 
-def authTrafficFlow(environment, region, fqdn, out_dir: str = '.'):
-    with Diagram("Superalgos IaC", filename=f"{out_dir}/diagram-authentication-{environment}-{region}", outformat="png", show=False):
+def authTrafficFlow(environment, region, fqdn, out_dir: str = '.', graph_attr = {}):
+    with Diagram("Superalgos IaC", filename=f"{out_dir}/diagram-authentication-{environment}-{region}", outformat="png", show=False, graph_attr=graph_attr):
         elements = {}
         authTrafficInfrastructure(elements=elements, region=region, fqdn=fqdn)
         # User -> Application traffic flow
@@ -158,10 +168,10 @@ def authTrafficFlow(environment, region, fqdn, out_dir: str = '.'):
         
 
 
+
+
 def authTrafficInfrastructure(elements, region, fqdn):
-    elements["aws_account_cluster"] = Cluster(f"AWS Account: {aws_account_alias}")
-    elements["internet"] = Internet("Public Internet")
-    elements["user"] = User("User")
+    awsAccount(elements)
     with elements["aws_account_cluster"]:
         elements["region"] = Cluster(f"Region: {region}")
         with elements["region"]:
@@ -183,7 +193,6 @@ def authTrafficInfrastructure(elements, region, fqdn):
                         elements["external_lb"] = ALB("VPN-Facing ALB")
                 # Application Subnet Object
                 with elements["subnet_application"]:
-                    elements["ngw_sa_nodes"] = NATGateway("NatGW: SA Nodes")
                     elements["sg_sa_nodes"] = Cluster("SG: Superalgos Nodes")
                     elements["sg_internal_lb"] = Cluster("SG: Internal LB")
                     # SG: Internal LB Object
@@ -203,8 +212,8 @@ def authTrafficInfrastructure(elements, region, fqdn):
                 elements["app_instances"][idx] - ElasticBlockStoreEBSVolume(f"sa_ebs_{i.get('idx')}")
 
 
-def managementTrafficFlow(environment, region, fqdn, out_dir: str = '.'):
-    with Diagram("Superalgos IaC - Management Traffic", filename=f"{out_dir}/diagram-management-{environment}-{region}", outformat="png", show=False):
+def managementTrafficFlow(environment, region, fqdn, out_dir: str = '.', graph_attr = {}):
+    with Diagram("Superalgos IaC - Management Traffic", filename=f"{out_dir}/diagram-management-{environment}-{region}", outformat="png", show=False, graph_attr=graph_attr):
         elements = {}
         managementInfrastructure(elements=elements, region=region, fqdn=fqdn)
         # User -> SSH Managment traffic flow
@@ -222,10 +231,7 @@ def managementTrafficFlow(environment, region, fqdn, out_dir: str = '.'):
 
 
 def managementInfrastructure(elements, region, fqdn):
-    elements["aws_account_cluster"] = Cluster(f"AWS Account: {aws_account_alias}")
-    elements["internet"] = Internet("Public Internet")
-    elements["user"] = User("User")
-
+    awsAccount(elements)
     with elements["aws_account_cluster"]:
         elements["region"] = Cluster(f"Region: {region}")
         with elements["region"]:
@@ -274,16 +280,19 @@ def managementInfrastructure(elements, region, fqdn):
 
 
 def makeDiagrams(out_dir: str = '.'):
+    graph_attr = {
+        "fontsize": "45",
+    }
     for environment, region in zip(environments, regions):
         # The fully qualified domain name that will be appended
         fqdn = f"{environment}.{sa_subdomain}.{region}.{sa_TLD}"
         # ################
         # Overview Diagram
         # ################
-        authTrafficFlow(environment=environment, region=region, fqdn=fqdn, out_dir=out_dir)
+        authTrafficFlow(environment=environment, region=region, fqdn=fqdn, out_dir=out_dir, graph_attr=graph_attr)
 
         # Management Traffic
-        managementTrafficFlow(environment=environment, region=region, fqdn=fqdn, out_dir=out_dir)
+        managementTrafficFlow(environment=environment, region=region, fqdn=fqdn, out_dir=out_dir, graph_attr=graph_attr)
     
     
 
