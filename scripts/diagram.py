@@ -10,8 +10,10 @@ from diagrams.aws.management import AutoScaling, Cloudwatch
 from diagrams.aws.network import ALB, ClientVpn, NATGateway, VpnConnection
 from diagrams.aws.security import Cognito
 from diagrams.aws.storage  import ElasticBlockStoreEBSVolume, S3
+from diagrams.onprem.certificates import LetsEncrypt
 from diagrams.onprem.client import User
-from diagrams.onprem.network import Internet
+from diagrams.onprem.compute import Server
+from diagrams.onprem.network import Internet, Nginx
 from diagrams.onprem.vcs import Github
 
 
@@ -22,6 +24,13 @@ aws_account_alias = "Superalgos"
 # Set this to the name of the environment
 # environments = ["live", "paper"]
 environments = ["paper"]
+
+
+# Set this to the port number nginx will be listening on for front-end traffic
+nginx_app_port = 8443
+
+# Set this to the port number nginx will be listening on for ws traffic
+nginx_ws_port = 8041
 
 
 # Set this to the list of region names the app will be deployed to
@@ -47,7 +56,7 @@ sa_TLD = "mydomain.com"
 
 # Set this to the TLS port on the Internet facing AWS ALB
 # sa_tls_port = 443
-sa_tls_port = 443
+alb_tls_port = 443
 
 # Set this to the websocket port
 # sa_ws_port = 18041
@@ -93,7 +102,7 @@ vpn_subnet_cidr = "10.42.96.0/19"
 sa_instance_mapping = [
     {
         "idx": i,
-        "tls_port": f"8{sa_tls_port + i}",
+        "tls_port": f"8{alb_tls_port + i}",
         "sa_app_port": sa_app_port + i,
         "sa_ws_port": sa_ws_port + i
     }
@@ -118,6 +127,9 @@ def dottedGreen(label="", color="darkgreen", style="bold, dotted"):
 def saInstance(label=""):
     return EC2(label)
 
+
+def solidBlack(label="", color="black", style=""):
+    return Edge(label=label, color=color, style=style)
 
 def solidBlue(label="", color="darkblue", style=""):
     return Edge(label=label, color=color, style=style)
@@ -159,16 +171,13 @@ def authTrafficFlow(environment, region, fqdn, out_dir: str = '.', graph_attr = 
         elements["app_instances"] >> solidGreen("6: Application Response") >> elements["external_lb"]
         elements["external_lb"] >> solidGreen("7: ALB Application Response to user") >> elements["vpn_connection"] >> solidGreen("7: ALB Application Response to user") >> elements["vpn_endpoint"] >> solidGreen("7: ALB Application Response to user") >> elements["internet"] >> solidGreen("7: ALB Application Response to user") >> elements["user"]
         # Application Internal Traffic Routing
-        elements["app_instances"][0] >> solidGreen(f"8: Internal unsecured WS and HTTP Communication:\n`ws://{fqdn}:{sa_ws_port}[+NodeIndex]`\n`http://{fqdn}:{sa_app_port}[+NodeIndex]`") >> elements["internal_lb"]
+        elements["app_instances"][0] >> solidGreen(f"8: Internal unsecured WS and HTTP Communication:\n`ws://{fqdn}:{nginx_ws_port}[+NodeIndex]`\n`http://{fqdn}:{nginx_app_port}[+NodeIndex]`") >> elements["internal_lb"]
         elements["internal_lb"] >> solidGreen(f"9: Internal traffic hairpin") >> elements["app_instances"][-1]
         # Application Logging
         elements["external_lb"] >> dashedRed("10: Access Logs :: ALB/Application") >> elements["cloud_watch"] >> dashedRed("10: Access Logs Read-Only Storage :: ALB/Application") >> elements["s3_access"]
         # VPN Access Logs
         elements["vpn_endpoint"] >> dashedRed("10: Access Logs :: VPN Client ") >> elements["cloud_watch"] >> dashedRed("10: Access Logs Read-Only Storage :: VPN Client") >> elements["s3_vpnlogs"]
         
-
-
-
 
 def authTrafficInfrastructure(elements, region, fqdn):
     awsAccount(elements)
@@ -210,6 +219,21 @@ def authTrafficInfrastructure(elements, region, fqdn):
             # Add connections from each SA Node to an EBS Volume
             for idx, i in enumerate(sa_instance_mapping):
                 elements["app_instances"][idx] - ElasticBlockStoreEBSVolume(f"sa_ebs_{i.get('idx')}")
+
+
+def superalgosNodeDiagram(environment, region, fqdn, out_dir: str = '.', graph_attr = {}):
+    with Diagram("Superalgos IaC - Superalgos Node", filename=f"{out_dir}/diagram-superalgos-node-{environment}-{region}", outformat="png", show=False, graph_attr=graph_attr):
+        elements = {}
+        with Cluster(f"Superalgos Node"):
+            elements["certificates"] = LetsEncrypt("LetsEncrypt Self-Signed Certificates")
+            elements["nginx"] = Nginx("Nginx Reverse Proxy")
+            elements["superalgos"] = Server("Superalgos Application")
+        #
+        elements["nginx"] >> solidBlack("Load Self-Signed Certificates") >> elements["certificates"]
+        elements["certificates"] >> elements["nginx"]
+        #
+        elements["nginx"] >> solidBlue(f"Forward traffic from https://<node>.{fqdn}:{nginx_app_port} to http://localhost:{sa_app_port}") >> elements["superalgos"]
+        elements["nginx"] >> solidGreen(f"Forward traffic from https://<node>.{fqdn}:{nginx_ws_port} to http://localhost:{sa_ws_port}") >> elements["superalgos"]
 
 
 def managementTrafficFlow(environment, region, fqdn, out_dir: str = '.', graph_attr = {}):
@@ -293,7 +317,9 @@ def makeDiagrams(out_dir: str = '.'):
 
         # Management Traffic
         managementTrafficFlow(environment=environment, region=region, fqdn=fqdn, out_dir=out_dir, graph_attr=graph_attr)
-    
+
+        # Node Diagram
+        superalgosNodeDiagram(environment=environment, region=region, fqdn=fqdn, out_dir=out_dir, graph_attr=graph_attr)
     
 
 

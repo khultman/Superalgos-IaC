@@ -7,6 +7,9 @@ It is very much a prototype, not functional, and a work in progress.
 
 ## Design
 
+### EC2 Node Configuration
+![EC2 Node Configuration](design/diagram-superalgos-node-paper-us-east-1.png)
+
 ### Authentication and Application Traffic Flow
 ![Authentication and Application Traffic Flow](design/diagram-authentication-paper-us-east-1.png)
 
