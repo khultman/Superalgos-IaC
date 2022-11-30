@@ -232,10 +232,13 @@ def superalgosNodeDiagram(environment, region, fqdn, out_dir: str = '.', graph_a
     with Diagram("Superalgos IaC - Superalgos Node", filename=f"{out_dir}/diagram-superalgos-node-{environment}-{region}", outformat="png", show=False, graph_attr=graph_attr):
         elements = {}
         elements["subnet_application"] = PrivateSubnet(f"Application Subnet :: {application_subnet_cidr}")
-        with Cluster(f"Superalgos Node"):
-            elements["certificates"] = LetsEncrypt("LetsEncrypt Self-Signed Certificates")
-            elements["nginx"] = Nginx("Nginx Reverse Proxy")
-            elements["superalgos"] = Server("Superalgos Application")
+        elements["sg_sa_nodes"] = Cluster("SG: Superalgos Nodes")
+        with elements["sg_sa_nodes"]:
+            elements["application_node"] = Cluster(f"Superalgos Node")
+            with elements["application_node"]:
+                elements["certificates"] = LetsEncrypt("LetsEncrypt Self-Signed Certificates")
+                elements["nginx"] = Nginx("Nginx Reverse Proxy")
+                elements["superalgos"] = Server("Superalgos Application")
         #
         elements["subnet_application"] >> solidRed("Inbound Application Traffic") >> elements["nginx"]
         elements["nginx"] >> solidRed("Outbound Application Traffic") >> elements["subnet_application"]
