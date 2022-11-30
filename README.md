@@ -8,6 +8,12 @@ It is very much a prototype, not functional, and a work in progress.
 ## Design
 
 ### EC2 Node Configuration
+
+Each EC2 node will be configured with a local nginx proxy using TLS certificates,
+ensuring all trafic that transits to and from the superalgos application to the
+external world will be encrypted.
+* Note: This ***assumes*** but does ensure that all traffic to and from the superalgos application will be authenticated or autherized
+
 ![EC2 Node Configuration](design/diagram-superalgos-node-paper-us-east-1.png)
 
 ### Authentication and Application Traffic Flow
