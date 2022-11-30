@@ -64,14 +64,19 @@ variable "public_subnets" {
     default               = ["10.42.0.0/23", "10.42.2.0/23", "10.42.4.0/23"]
 }
 
+variable "region" {
+    description           = "Region"
+    default               = "us-east-1"
+}
+
 variable "tags" {
   description             = "A map of tags to assign to resources"
   type                    = map(string)
   default                 = {}
 }
 
-
-variable "region" {
-    description           = "Region"
-    default               = "us-east-1"
+variable "tags_for_resource" {
+  description             = "A nested map of tags to assign to specific resource types"
+  type                    = map(map(string))
+  default                 = {}
 }

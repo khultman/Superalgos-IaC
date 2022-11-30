@@ -12,7 +12,6 @@ variable "environment" {
 }
 
 
-
 # The address range cannot overlap with the target network address range, 
 # the VPC address range or any of the routes that will be associated with the 
 # Client VPN endpoint. The client address range must be at minimum /22 and not 
@@ -23,16 +22,19 @@ variable "vpn_client_cidr" {
     default               = "10.21.0.0/16"
 }
 
+
 variable "vpn_subdomain" {
     description           = "Subdomain for client vpn endpoints, creates zone within the root domain, e.x bar for bar.foo.com"
     default               = "vpn"
 }
+
 
 variable "tags" {
   description             = "A map of tags to assign to resources"
   type                    = map(string)
   default                 = {}
 }
+
 
 variable "tags_for_resource" {
   description             = "A nested map of tags to assign to specific resource types"

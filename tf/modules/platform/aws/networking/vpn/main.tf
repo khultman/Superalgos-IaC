@@ -12,13 +12,13 @@ resource "aws_acm_certificate" "acm_cert_vpn_server" {
 
 resource "aws_ec2_client_vpn_endpoint" "vpn_client_endpoint" {
   description             = "Client VPN"
-  client_cidr_block       = "${var.vpn_client_cidr}"
+  client_cidr_block       = var.vpn_client_cidr
   split_tunnel            = true
-  server_certificate_arn  = aws_acm_certificate_validation.vpn_server.certificate_arn
+  server_certificate_arn  = aws_acm_certificate_validation.acm_cert_vpn_server.certificate_arn
 
   authentication_options {
     type                  = "certificate-authentication"
-    root_certificate_chain_arn = aws_acm_certificate.vpn_client_root.arn
+    root_certificate_chain_arn = aws_acm_certificate.acm_cert_vpn_server.arn
   }
 
   connection_log_options {
