@@ -7,7 +7,7 @@ from diagrams import Cluster, Diagram, Edge
 from diagrams.aws.compute import EC2
 from diagrams.aws.general import InternetGateway
 from diagrams.aws.management import AutoScaling, Cloudwatch
-from diagrams.aws.network import ALB, ClientVpn, NATGateway, VpnConnection
+from diagrams.aws.network import ALB, ClientVpn, NATGateway, PrivateSubnet, VpnConnection
 from diagrams.aws.security import Cognito
 from diagrams.aws.storage  import ElasticBlockStoreEBSVolume, S3
 from diagrams.onprem.certificates import LetsEncrypt
@@ -231,10 +231,14 @@ def authTrafficInfrastructure(elements, region, fqdn):
 def superalgosNodeDiagram(environment, region, fqdn, out_dir: str = '.', graph_attr = {}):
     with Diagram("Superalgos IaC - Superalgos Node", filename=f"{out_dir}/diagram-superalgos-node-{environment}-{region}", outformat="png", show=False, graph_attr=graph_attr):
         elements = {}
+        elements["subnet_application"] = PrivateSubnet(f"Application Subnet :: {application_subnet_cidr}")
         with Cluster(f"Superalgos Node"):
             elements["certificates"] = LetsEncrypt("LetsEncrypt Self-Signed Certificates")
             elements["nginx"] = Nginx("Nginx Reverse Proxy")
             elements["superalgos"] = Server("Superalgos Application")
+        #
+        elements["subnet_application"] >> solidRed("Inbound Application Traffic") >> elements["nginx"]
+        elements["nginx"] >> solidRed("Outbound Application Traffic") >> elements["subnet_application"]
         #
         elements["nginx"] >> solidBlack("Load Self-Signed Certificates") >> elements["certificates"]
         elements["certificates"] >> elements["nginx"]
