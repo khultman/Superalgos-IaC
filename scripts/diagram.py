@@ -89,12 +89,19 @@ public_subnet_cidr = "10.42.64.0/19"
 # vpn_subdomain = "vpn"
 vpn_subdomain = "vpn"
 
+
+# The address range cannot overlap with the target network address range, 
+# the VPC address range or any of the routes that will be associated with the 
+# Client VPN endpoint. The client address range must be at minimum /22 and not 
+# greater than /12 CIDR block size. You cannot change the client address range 
+# after you create the Client VPN endpoint
+#
 # The vpn client subnets CIDR block, this should be large at least
 # twice the size as required client connections [cite](https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/what-is.html#what-is-limitations)
 # and at least a /22 and no larger than a /12
 # Recommendation is a /19 or /20 for consistency
 # public_subnet_cidr = "10.42.64.0/19"
-vpn_subnet_cidr = "10.42.96.0/19"
+vpn_subnet_cidr = "10.21.0.0/16"
 
 
 # This will generate a mapping of instance details which will be used later
@@ -188,13 +195,13 @@ def authTrafficInfrastructure(elements, region, fqdn):
             elements["cognito"] = Cognito("AWS Cognito")
             elements["s3_access"] = S3(f"access-logs.{fqdn}")
             elements["s3_vpnlogs"] = S3(f"vpn-logs.{fqdn}")
+            elements["subnet_vpn"] = Cluster(f"VPN Subnet :: {vpn_subnet_cidr}")
             elements["vpn_endpoint"] = ClientVpn(f"{vpn_subdomain}.{fqdn}")
             elements["vpc_sa"] = Cluster(f"Superalgos VPC :: {vpc_cidr}")
             #
             with elements["vpc_sa"]:
                 elements["subnet_application"] = Cluster(f"Application Subnet :: {application_subnet_cidr}")
                 elements["subnet_public"] = Cluster(f"Public Subnet :: {public_subnet_cidr}")
-                elements["subnet_vpn"] = Cluster(f"VPN Subnet :: {vpn_subnet_cidr}")
                 # Public Subnet Objectes
                 with elements["subnet_public"]:
                     elements["sg_alb"] = Cluster("SG: ALB")
@@ -262,6 +269,7 @@ def managementInfrastructure(elements, region, fqdn):
             elements["cloud_watch"] = Cloudwatch("AWS Cloudwatch")
             elements["s3_bastion"] = S3(f"bastion-logs.{fqdn}")
             elements["s3_vpnlogs"] = S3(f"vpn-logs.{fqdn}")
+            elements["subnet_vpn"] = Cluster(f"VPN Subnet :: {vpn_subnet_cidr}")
             elements["vpn_endpoint"] = ClientVpn(f"{vpn_subdomain}.{fqdn}")
             elements["vpc_sa"] = Cluster(f"Superalgos VPC :: {vpc_cidr}")
             #
@@ -269,7 +277,6 @@ def managementInfrastructure(elements, region, fqdn):
                 elements["subnet_application"] = Cluster(f"Application Subnet :: {application_subnet_cidr}")
                 elements["subnet_bastion"] = Cluster(f"Bastion Subnet :: {bastion_subnet_cidr}")
                 elements["subnet_public"] = Cluster(f"Public Subnet :: {public_subnet_cidr}")
-                elements["subnet_vpn"] = Cluster(f"VPN Subnet :: {vpn_subnet_cidr}")
                 # Public Subnet Objectes
                 with elements["subnet_public"]:
                     elements["igw"] = InternetGateway("igw")

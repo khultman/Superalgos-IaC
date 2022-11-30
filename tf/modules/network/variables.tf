@@ -22,6 +22,16 @@ variable "vpc_cidr" {
     default               = "10.42.0.0/16"
 }
 
+# The address range cannot overlap with the target network address range, 
+# the VPC address range or any of the routes that will be associated with the 
+# Client VPN endpoint. The client address range must be at minimum /22 and not 
+# greater than /12 CIDR block size. You cannot change the client address range 
+# after you create the Client VPN endpoint
+variable "vpn_client_cidr" {
+    description           = "CIDR Block for VPN Client"
+    default               = "10.21.0.0/16"
+}
+
 variable "vpn_subdomain" {
     description           = "Subdomain for client vpn endpoints, creates zone within the root domain, e.x bar for bar.foo.com"
     default               = "vpn"
