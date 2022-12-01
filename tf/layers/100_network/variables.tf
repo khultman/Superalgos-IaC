@@ -1,7 +1,4 @@
 
-
-
-
 variable "appname" {
     description           = "Name of application"
     default               = "superalgos"
