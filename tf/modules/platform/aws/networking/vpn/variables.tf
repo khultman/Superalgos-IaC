@@ -12,6 +12,21 @@ variable "environment" {
 }
 
 
+variable "vpc_cidr" {
+    description           = "CIDR Block for VPC"
+    default               = "10.42.0.0/16"
+}
+
+variable "vpc_id" {
+  description             = "The ID of the VPC to create the subnets in"
+  type                    = string
+}
+
+variable "associated_subnet_ids" {
+    description           = "Subnets to grant access to the client vpn endoint"
+    type                  = list
+}
+
 # The address range cannot overlap with the target network address range, 
 # the VPC address range or any of the routes that will be associated with the 
 # Client VPN endpoint. The client address range must be at minimum /22 and not 
