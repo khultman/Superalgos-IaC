@@ -41,11 +41,11 @@ variable "tags_for_resource" {
 # Private subnet variables
 
 variable "nat_gateway_count" {
-  description             = "The number of NAT gateways to use for routing, must match subnet_count and nat_gateway_ids"
-  default                 = 0
+  description                     = "The number of NAT gateways to use for routing, must match subnet_count and nat_gateway_ids"
+  default                         = 0
 }
 
 variable "nat_gateway_ids" {
-  description             = "A list of NAT Gateway IDs to use for routing"
-  default                 = []
+  description                    = "A list of NAT Gateway IDs to use for routing"
+  default                         = []
 }

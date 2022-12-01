@@ -33,13 +33,28 @@ variable "vpn_client_cidr" {
 }
 
 variable "vpn_subdomain" {
-    description           = "Subdomain for client vpn endpoints, creates zone within the root domain, e.x bar for bar.foo.com"
-    default               = "vpn"
+    description                   = "Subdomain for client vpn endpoints, creates zone within the root domain, e.x bar for bar.foo.com"
+    default                       = "vpn"
+}
+
+variable "ec2_application_port" {
+    description                   = "The port the aplication listens on"
+    default                       = "8443"
+}
+
+variable "ec2_websocket_port" {
+    description                   = "The port the aplication websocket listens on"
+    default                       = "8041"
 }
 
 variable "application_listen_port" {
-    description           = "The port the aplication listens on"
-    default               = "8080"
+    description                   = "The internal port the aplication listens on"
+    default                       = "34248"
+}
+
+variable "websocket_listen_port" {
+    description                   = "The aplication websocket internal port"
+    default                       = "18041"
 }
 
 variable "application_listen_proto" {

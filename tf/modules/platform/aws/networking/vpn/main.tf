@@ -58,9 +58,9 @@ resource "aws_security_group" "sg_vpn_client" {
 
 resource "aws_ec2_client_vpn_network_association" "vpn_subnets" {
   count = length(var.associated_subnet_ids)
-  client_vpn_endpoint_id = aws_ec2_client_vpn_endpoint.vpn_client_endpoint.id
-  subnet_id = var.associated_subnet_ids[count.index]
-  security_groups = [aws_security_group.sg_vpn_client.id]
+  client_vpn_endpoint_id  = aws_ec2_client_vpn_endpoint.vpn_client_endpoint.id
+  subnet_id               = var.associated_subnet_ids[count.index]
+  security_groups         = [aws_security_group.sg_vpn_client.id]
   lifecycle {
     // The issue why we are ignoring changes is that on every change
     // terraform screws up most of the vpn assosciations
