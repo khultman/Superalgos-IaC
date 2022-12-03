@@ -1,22 +1,18 @@
 
 S3_STATE_BUCKET_NAME=superalgos-terraform-state
 S3_STATE_BUCKET_PLACEHOLDER=CHANGE-THE-BUCKET-NAME
-TERRAFORM_CONFIG_FILE=terraform.tf
+STATE_TERRAFORM_CONFIG_FILE=terraform.tf
 
 
-.PHONY: bootstrap comment-tfconfig uncomment-tfconfig diagrams test 
+.PHONY: bootstrap comment-state-tfconfig diagrams test  uncomment-state-tfconfig
 
 
 bootstrap:
 	echo "bootstrap"
 
 
-comment-tfconfig:
-	@sed -i '/^terraform {/,/^}/s/^/#/' ${TERRAFORM_CONFIG_FILE}
-
-
-uncomment-tfconfig:
-	@sed -i '/^#terraform {/,/^#}/s/^#//' ${TERRAFORM_CONFIG_FILE}
+comment-state-tfconfig:
+	@sed -i '/^terraform {/,/^}/s/^/#/' ${STATE_TERRAFORM_CONFIG_FILE}
 
 
 diagrams:
@@ -30,3 +26,6 @@ init:
 test:
 	$(MAKE) -C tests
 
+
+uncomment-state-tfconfig:
+	@sed -i '/^#terraform {/,/^#}/s/^#//' ${STATE_TERRAFORM_CONFIG_FILE}
