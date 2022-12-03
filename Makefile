@@ -93,7 +93,7 @@ bootstrap-destroy: bootstrap-plan-destroy
 
 .PHONY: bootstrap-migrate-state
 bootstrap-migrate-state:
-	@$(TERRAFORM) init -force-copy
+	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) init -force-copy
 
 
 .PHONY: bootstrap-uncomment-tfconfig
