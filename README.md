@@ -1,4 +1,4 @@
-# Superalgos Deployment Scripts for AWS
+# Superalgos Infrastructure-as-Code
 
 This project is designed to deploy the Superalgos project securely to aws
 
