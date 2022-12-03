@@ -4,6 +4,11 @@ S3_STATE_BUCKET_PLACEHOLDER       = CHANGE-THE-BUCKET-NAME
 TERRAFORM_CONFIG_FILE             = terraform.tf
 TERRAFORM_GLOBAL_STATE_LAYER_DIR  = tf/environments/global/000-Terraform-State
 
+# Set the AWS DEFAULT REGION for use in the Makefile if it doesn't exist
+ifeq ($(AWS_DEFAULT_REGION), )
+  $(info Setting AWS_DEFAULT_REGION)
+  AWS_DEFAULT_REGION              = us-east-1
+endif
 
 
 .PHONY: bootstrap
@@ -29,7 +34,7 @@ terraform-global-state-init:
 
 .PHONY: test
 test:
-	$(MAKE) -C tests
+	@echo $(AWS_DEFAULT_REGION)
 
 
 .PHONY: uncomment-state-tfconfig
