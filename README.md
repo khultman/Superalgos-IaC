@@ -4,6 +4,16 @@ This project is designed to deploy the Superalgos project securely to aws
 
 It is very much a prototype, not functional, and a work in progress.
 
+## Usage
+
+You, the user, will need to modify the following files for this to be usable.
+
+## tf/environments/global/main.tf
+Please change the name of the bucket to a globally unique name
+
+## Project Structure
+
+
 
 ## Design
 
