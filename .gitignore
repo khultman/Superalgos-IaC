@@ -47,3 +47,5 @@ terraform.rc
 # Ignore terraform lock files
 .terraform.lock.hcl
 
+# Ignore the plan files
+tf.plan

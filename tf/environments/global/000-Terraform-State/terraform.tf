@@ -14,7 +14,7 @@ terraform {
     # Replace this with your bucket name!
     bucket                        = "superalgos-terraform-state"
     key                           = "global/s3/terraform.tfstate"
-    region                        = "us-east-2"
+    region                        = "CHANGE-THE-REGION"
 
     # Replace this with your DynamoDB table name!
     dynamodb_table                = "superalgos-terraform-locks"
