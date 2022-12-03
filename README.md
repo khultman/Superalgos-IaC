@@ -4,12 +4,22 @@ This project is designed to deploy the Superalgos project securely to aws
 
 It is very much a prototype, not functional, and a work in progress.
 
+
+## Prerequisites
+* An AWS account
+* AWS API keys for deployment
+* Forked repository of [superalgos](https://superalgos.org/) per [documentation](https://github.com/Superalgos/Superalgos#superalgos-platform-client-installation)
+
 ## Usage
 
 You, the user, will need to modify the following files for this to be usable.
 
+## scripts/superalgos.setup.sh
+You will need update some keys variables in this file to match your unique
+circumstances, such as github username.
+
 ## tf/environments/global/main.tf
-Please change the name of the bucket to a globally unique name
+Please change the name of the bucket to a globally unique name.
 
 ## tf/environments/global/terraform.tf
 Prior to the first deployment of the global environment you will need comment
