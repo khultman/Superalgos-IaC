@@ -18,10 +18,10 @@ You, the user, will need to modify the following files for this to be usable.
 You will need update some keys variables in this file to match your unique
 circumstances, such as github username.
 
-## tf/environments/global/main.tf
+## tf/environments/global/000-Terraform-State/main.tf
 Please change the name of the bucket to a globally unique name.
 
-## tf/environments/global/terraform.tf
+## tf/environments/global/000-Terraform-State/terraform.tf
 Prior to the first deployment of the global environment you will need comment
 out the remote state configuration found in this file. After the resources to
 manage the remote state are deployed, you will need modify this file with the
