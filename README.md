@@ -6,9 +6,16 @@ It is very much a prototype, not functional, and a work in progress.
 
 
 ## Prerequisites
-* An AWS account
-* AWS API keys for deployment
 * Forked repository of [superalgos](https://superalgos.org/) per [documentation](https://github.com/Superalgos/Superalgos#superalgos-platform-client-installation)
+* An AWS account.
+* The ability to delegate a DNS domain for the AWS account to be used.
+* AWS API keys for deployment
+
+### Helpful to have
+* Some knowledge of terraform
+* Some knowledge of AWS infrastructure
+* Some knowledge of CI pipelines, specifically Github Actions
+
 
 ## Usage
 
