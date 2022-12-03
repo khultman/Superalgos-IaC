@@ -19,24 +19,16 @@ It is very much a prototype, not functional, and a work in progress.
 
 ## Usage
 
-You, the user, will need to modify the following files for this to be usable.
+Start with creating a [private fork](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository) of this repository. You will need to make several modifications to the terraform files contained, such as defining the appropriate region for deployment and other configuration-specific elements that will be unique for your circumstances. I have tried to make this as easy as possible for you.
 
-## scripts/superalgos.setup.sh
+### Edit these files
+
+#### Makefile
+There are a few key variables that you will want to define for your unique circumstanes
+
+#### scripts/superalgos.setup.sh
 You will need update some keys variables in this file to match your unique
 circumstances, such as github username.
-
-## tf/environments/global/000-Terraform-State/main.tf
-Please change the name of the bucket to a globally unique name.
-
-## tf/environments/global/000-Terraform-State/terraform.tf
-Prior to the first deployment of the global environment you will need comment
-out the remote state configuration found in this file. After the resources to
-manage the remote state are deployed, you will need modify this file with the
-relevent configuration details and then move the terraform state to the cloud
-provider.
-
-
-
 
 
 ## Design

@@ -12,12 +12,12 @@
 terraform {
   backend "s3" {
     # Replace this with your bucket name!
-    bucket                        = "superalgos-terraform-state"
+    bucket                        = "CHANGE-THE-BUCKET-NAME"
     key                           = "global/s3/terraform.tfstate"
     region                        = "CHANGE-THE-REGION"
 
     # Replace this with your DynamoDB table name!
-    dynamodb_table                = "superalgos-terraform-locks"
+    dynamodb_table                = "CHANGE-THE-TABLE-NAME"
     encrypt                       = true
   }
 }
