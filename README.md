@@ -11,7 +11,14 @@ You, the user, will need to modify the following files for this to be usable.
 ## tf/environments/global/main.tf
 Please change the name of the bucket to a globally unique name
 
-## Project Structure
+## tf/environments/global/terraform.tf
+Prior to the first deployment of the global environment you will need comment
+out the remote state configuration found in this file. After the resources to
+manage the remote state are deployed, you will need modify this file with the
+relevent configuration details and then move the terraform state to the cloud
+provider.
+
+
 
 
 
