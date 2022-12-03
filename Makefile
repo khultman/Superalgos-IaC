@@ -4,6 +4,11 @@ ifeq ($(AWS_DEFAULT_REGION), )
   AWS_DEFAULT_REGION              = us-east-1
 endif
 
+# This is the AWS region that will be used throughout the makefile
+# Each specific use of region will be extended from here to allow you to
+# independantly modify the region for different elements of this deployment.
+AWS_REGION                        = $(AWS_DEFAULT_REGION)
+
 # For each identical environment,
 # add each layer in order that needs to get applied.
 ENVIRONMENT_LAYERS                = 100-Network 150-VPN
@@ -14,24 +19,39 @@ ENVIRONMENTS                      = paper
 # The base directory where the environments can be found
 ENVIRONMENTS_BASE_DIR             = tf/environments
 
+# Change this to the name of your terraform lock table
 STATE_DYNAMO_TABLE_NAME           = superalgos-terraform-locks
+
+# This is the replacement key in the terraform files for the terraform lock table
 STATE_DYNAMO_TABLE_PLACEHOLDER    = CHANGE-THE-TABLE-NAME
-STATE_REGION                      = $(AWS_DEFAULT_REGION)
+
+# Change this to your terraform state region if different than your default region
+STATE_REGION                      = $(AWS_REGION)
+
+# This is the replacement key in the terraform files for the region
 STATE_REGION_PLACEHOLDER          = CHANGE-THE-REGION
+
+# Change this to your globally unique terraform s3 state bucket name
 STATE_S3_BUCKET_NAME              = superalgos-terraform-state
+
+# This is the replacement key in the terraform files for the S3 state bucket
 STATE_S3_BUCKET_PLACEHOLDER       = CHANGE-THE-BUCKET-NAME
 
+# This is the path of the terraform executable
+TERRAFORM                         = /usr/bin/terraform
+
+# These are the names of the terraform files in any given layer or module
 TERRAFORM_CONFIG_FILE             = terraform.tf
 TERRAFORM_MAIN_FILE               = main.tf
 TERRAFORM_OUTPUTS_FILE            = outputs.tf
 TERRAFORM_PROVIDER_FILE           = provider.tf
 TERRAFORM_VARIABLES_FILE          = variables.tf
 
+# These are the files that will be automatically edited based on unique configuration
 TERRAFORM_EDITABLE_FILES          = $(TERRAFORM_CONFIG_FILE) $(TERRAFORM_MAIN_FILE) $(TERRAFORM_PROVIDER_FILE)
 
+# This is the project relative path of the gobal state "bootstrap" layer
 TERRAFORM_GLOBAL_STATE_LAYER_DIR  = $(ENVIRONMENTS_BASE_DIR)/global/000-Terraform-State
-
-TERRAFORM                         = /usr/bin/terraform
 
 
 
