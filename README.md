@@ -1,8 +1,10 @@
 # Superalgos Infrastructure-as-Code
 
-This project is designed to deploy the Superalgos project securely to aws
+This project is [designed](docs/design.md) to deploy the Superalgos project securely to AWS. See the [Project Structure](docs/project-structure.md) for an overview.
 
-It is very much a prototype, not functional, and a work in progress.
+***It is very much a prototype, not fully functional, and a work in progress.***
+
+***It is very much a prototype, not fully functional, and a work in progress.***
 
 
 ## Prerequisites
