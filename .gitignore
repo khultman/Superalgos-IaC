@@ -49,3 +49,7 @@ terraform.rc
 
 # Ignore the plan files
 tf.plan
+
+# Ignore the state files we might leave
+.aborted
+.completed
