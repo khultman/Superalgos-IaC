@@ -11,7 +11,7 @@
 * Any user with minimal technical ability SHOULD be able to connect to the deployed application.
 * The trading platform MUST be fault tolerant.
 * Superalgos provides no built-in security, we MUST protect the access to a reasonable level:
-    * A user MUST be authenticated
+    * A user SHOULD be authenticated.
     * Data MUST be encrypted in flight.
     * Data MUST be encrypted in rest.
 * The operational cost SHOULD be as low as possible.
