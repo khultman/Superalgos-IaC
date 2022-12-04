@@ -122,8 +122,8 @@ diagrams:
 	@python3 scripts/diagram.py -o design
 
 
-.PHONY: environments
-envrionments:
+.PHONY: tf-environments
+tf-envrionments:
 	@for environment_name in $(ENVIRONMENTS); do
 		cp -r $(TEMPLATE_ENVIRONMENT) $(ENVIRONMENTS_BASE_DIR)/$(environment_name)
 	done
