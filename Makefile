@@ -37,6 +37,9 @@ STATE_S3_BUCKET_NAME              = superalgos-terraform-state
 # This is the replacement key in the terraform files for the S3 state bucket
 STATE_S3_BUCKET_PLACEHOLDER       = CHANGE-THE-BUCKET-NAME
 
+# template envrionment path to extend any paper/live/etc... environments from
+TEMPLATE_ENVIRONMENT              = $(ENVIRONMENTS_BASE_DIR)/template
+
 # This is the path of the terraform executable
 TERRAFORM                         = /usr/bin/terraform
 
@@ -117,6 +120,13 @@ bootstrap-update-layer-config-undo:
 .PHONY: diagrams
 diagrams:
 	@python3 scripts/diagram.py -o design
+
+
+.PHONY: environments
+envrionments:
+	for environment_name in $(ENVIRONMENTS); do
+		cp -r $(TEMPLATE_ENVIRONMENT) $(ENVIRONMENTS_BASE_DIR)/$(environment_name)
+	done
 
 
 .PHONY: test
