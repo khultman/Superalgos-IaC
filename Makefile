@@ -124,8 +124,8 @@ diagrams:
 
 .PHONY: tf-environments
 tf-envrionments:
-	@for environment_name in $(ENVIRONMENTS); do
-		cp -r $(TEMPLATE_ENVIRONMENT) $(ENVIRONMENTS_BASE_DIR)/$(environment_name)
+	@for environment_name in $(ENVIRONMENTS); do \
+		cp -r $(TEMPLATE_ENVIRONMENT) $(ENVIRONMENTS_BASE_DIR)/$$environment_name; \
 	done
 
 
