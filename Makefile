@@ -124,7 +124,7 @@ diagrams:
 
 .PHONY: environments
 envrionments:
-	for environment_name in $(ENVIRONMENTS); do
+	@for environment_name in $(ENVIRONMENTS); do
 		cp -r $(TEMPLATE_ENVIRONMENT) $(ENVIRONMENTS_BASE_DIR)/$(environment_name)
 	done
 
