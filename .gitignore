@@ -53,3 +53,5 @@ tf.plan
 # Ignore the state files we might leave
 .aborted
 .completed
+*.aborted
+*.completed

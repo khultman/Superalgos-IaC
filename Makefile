@@ -1,6 +1,6 @@
 # Set the AWS DEFAULT REGION for use in the Makefile if it doesn't exist
 ifeq ($(AWS_DEFAULT_REGION), )
-  $(info Setting AWS_DEFAULT_REGION)
+  $(info AWS_DEFAULT_REGION is unset, setting AWS_DEFAULT_REGION)
   AWS_DEFAULT_REGION              = us-east-1
 endif
 
@@ -43,11 +43,16 @@ STATE_S3_BUCKET_NAME              = superalgos-terraform-state
 # This is the replacement key in the terraform files for the S3 state bucket
 STATE_S3_BUCKET_PLACEHOLDER       = CHANGE-THE-BUCKET-NAME
 
+# This is a version identifier that will be used for state layer checks.
+# This is intended to be a simple integer, incremented only when a major change
+# is introduced to the state layer which necessitates modifications to the
+# underlying infrastructure, and such that state file needs to be removed from
+# the remote state infrastructure and re-copied from local instances.
+# In essence, this should be updated *very rarely, if ever at all*
+STATE_VERSION                     = 1
+
 # template envrionment path to extend any paper/live/etc... environments from
 TEMPLATE_ENVIRONMENT              = $(ENVIRONMENTS_BASE_DIR)/template
-
-# This is the path of the terraform executable
-TERRAFORM                         = /usr/bin/terraform
 
 # These are the names of the terraform files in any given layer or module
 TERRAFORM_CONFIG_FILE             = terraform.tf
@@ -63,6 +68,27 @@ TERRAFORM_EDITABLE_FILES          = $(TERRAFORM_CONFIG_FILE) $(TERRAFORM_MAIN_FI
 TERRAFORM_GLOBAL_STATE_LAYER_DIR  = $(ENVIRONMENTS_BASE_DIR)/global/000-Terraform-State
 
 
+# Commands, override these as-needed
+AWK                              := awk
+CP                               := cp
+EGREP                            := egrep
+LNDIR                            := lndir
+MKDIR                            := mkdir -p
+MV                               := mv
+PYTHON                           := python3
+RM                               := rm -f
+SED                              := sed
+SHELL                            := bash
+SORT                             := sort
+# This is the path of the terraform executable
+TERRAFORM                         = /usr/bin/terraform
+TOUCH                            := touch
+
+
+# $(call file-exists, file-name)
+#   Return non-null if a file exists.
+file-exists = $(wildcard $1)
+
 
 .PHONY: bootstrap
 bootstrap: bootstrap-update-layer-config bootstrap-comment-tfconfig bootstrap-init bootstrap-apply bootstrap-uncomment-tfconfig bootstrap-migrate-state
@@ -74,13 +100,16 @@ bootstrap-init:
 
 .PHONY: bootstrap-comment-tfconfig
 bootstrap-comment-tfconfig:
-	@echo "Commenting out configuration in $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/$(TERRAFORM_CONFIG_FILE)"
-	@cd $(TERRAFORM_GLOBAL_STATE_LAYER_DIR); sed -i '/^terraform {/,/^}/s/^/#/'  $(TERRAFORM_CONFIG_FILE)
+	@if ! test -f $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bct.completed || test $(STATE_VERSION) -gt `head -1 $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bct.completed`; then \
+		echo "Commenting out configuration in $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/$(TERRAFORM_CONFIG_FILE)"; \
+		cd $(TERRAFORM_GLOBAL_STATE_LAYER_DIR); sed -i '/^terraform {/,/^}/s/^/#/'  $(TERRAFORM_CONFIG_FILE) && \
+		echo $(STATE_VERSION) > bct.complete; \
+	fi
 
 
 .PHONY: bootstrap-plan-apply
 bootstrap-plan-apply:
-	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) plan -out=tf.plan -input=false -lock=true
+	$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) plan -out=tf.plan -input=false -lock=true
 
 
 .PHONY: bootstrap-plan-destroy
@@ -102,41 +131,47 @@ bootstrap-destroy: bootstrap-plan-destroy
 
 .PHONY: bootstrap-migrate-state
 bootstrap-migrate-state:
-	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) init -force-copy
+	@if ! test -f $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bms.completed || test $(STATE_VERSION) -gt `head -1 $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bms.completed`; then \
+		$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) init -force-copy && \
+		echo $(STATE_VERSION) > $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bms.completed; \
+	fi
 
 
 .PHONY: bootstrap-uncomment-tfconfig
 bootstrap-uncomment-tfconfig:
-	@echo "Uncommenting configuration in $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/$(TERRAFORM_CONFIG_FILE)"
-	@cd $(TERRAFORM_GLOBAL_STATE_LAYER_DIR); sed -i '/^#terraform {/,/^#}/s/^#//' $(TERRAFORM_CONFIG_FILE)
+	@if ! test -f $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/but.completed || test $(STATE_VERSION) -gt `head -1 $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/but.completed`; then \
+		echo "Uncommenting configuration in $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/$(TERRAFORM_CONFIG_FILE)"; \
+		cd $(TERRAFORM_GLOBAL_STATE_LAYER_DIR); $(SED) -i '/^#terraform {/,/^#}/s/^#//' $(TERRAFORM_CONFIG_FILE) && \
+		echo $(STATE_VERSION) > but.completed; \
+	fi
 
 
 .PHONY: bootstrap-update-layer-config
 bootstrap-update-layer-config:
 	@cd $(TERRAFORM_GLOBAL_STATE_LAYER_DIR); for file in $(TERRAFORM_EDITABLE_FILES); do \
-	sed -i 's/$(STATE_S3_BUCKET_PLACEHOLDER)/$(STATE_S3_BUCKET_NAME)/;s/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/$(STATE_DYNAMO_TABLE_NAME)/;s/$(STATE_REGION_PLACEHOLDER)/$(STATE_REGION)/' $${file}; done
+	$(SED) -i 's/$(STATE_S3_BUCKET_PLACEHOLDER)/$(STATE_S3_BUCKET_NAME)/;s/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/$(STATE_DYNAMO_TABLE_NAME)/;s/$(STATE_REGION_PLACEHOLDER)/$(STATE_REGION)/' $${file}; done
 
 
 .PHONY: bootstrap-update-layer-config-undo
 bootstrap-update-layer-config-undo:
 	@cd $(TERRAFORM_GLOBAL_STATE_LAYER_DIR); for file in $(TERRAFORM_EDITABLE_FILES); do \
-	sed -i 's/$(STATE_S3_BUCKET_NAME)/$(STATE_S3_BUCKET_PLACEHOLDER)/;s/$(STATE_DYNAMO_TABLE_NAME)/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/;s/$(STATE_REGION)/$(STATE_REGION_PLACEHOLDER)/' $${file}; done
+	$(SED) -i 's/$(STATE_S3_BUCKET_NAME)/$(STATE_S3_BUCKET_PLACEHOLDER)/;s/$(STATE_DYNAMO_TABLE_NAME)/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/;s/$(STATE_REGION)/$(STATE_REGION_PLACEHOLDER)/' $${file}; done
 
 
 .PHONY: diagrams
 diagrams:
-	@python3 scripts/diagram.py -o design
+	@$(PYTHON) scripts/diagram.py -o design
 
 
 .PHONY: tf-environments
 tf-envrionments:
 	@for environment_name in $(ENVIRONMENTS); do \
-		cp -r $(TEMPLATE_ENVIRONMENT) $(ENVIRONMENTS_BASE_DIR)/$$environment_name; \
+		$(CP) -r $(TEMPLATE_ENVIRONMENT) $(ENVIRONMENTS_BASE_DIR)/$$environment_name; \
 	done
 
 
 .PHONY: test
 test:
-	@echo $(AWS_DEFAULT_REGION)
+	@echo "Test"
 
 
