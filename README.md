@@ -36,7 +36,10 @@ crucial. See the [Route53 Documentation](https://docs.aws.amazon.com/Route53/lat
 for how to create the first hosted zone.
 
 #### Create a private fork
-Start with creating a [private fork](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository) of this repository. You will need to make several modifications to the terraform files contained, such as defining the appropriate region for deployment and other configuration-specific elements that will be unique for your circumstances. I have tried to make this as easy as possible for you.
+You will be modifying files in this repository and adding confidential
+configuration details. This is a byproduct of using [Terraform](https://www.terraform.io/).
+See the Github documentation [creating a private fork](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository)
+for details if you are unfamiliar with creating private forks.
 
 ### Edit these files
 Once you've created the private fork of this repository, you will need to make
