@@ -21,16 +21,61 @@ This project is [designed](docs/design.md) to deploy the Superalgos project secu
 
 ## Usage
 
+### Pre-Steps
+
+#### Create an AWS account
+If you don't already have an AWS account, you will need to create one. You can
+also use an existing AWS account if you already have one, or you can create a
+sub account. I would suggest that for best practices when it comes to security,
+you isolate this application into a its own dedicated account.
+
+#### Create a Route53 Hosted Zone
+As this deployment will create several hosted zones, both public and private,
+being able to delegate from an existing Route53 zone in the AWS account will
+crucial. See the [Route53 Documentation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Welcome.html)
+for how to create the first hosted zone.
+
+#### Create a private fork
 Start with creating a [private fork](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository) of this repository. You will need to make several modifications to the terraform files contained, such as defining the appropriate region for deployment and other configuration-specific elements that will be unique for your circumstances. I have tried to make this as easy as possible for you.
 
 ### Edit these files
+Once you've created the private fork of this repository, you will need to make
+a few customizations to the following files:
 
 #### Makefile
-There are a few key variables that you will want to define for your unique circumstanes
+There are a few key variables that you will want to define for your unique circumstanes.
+
+At a minimum, you should set these variables to appropriate values:
+```
+# This is the DNS name that will be used when creating sub-zones and delegation
+# records required by the VPN, TLS Certificates, and Load Balancers.
+# This *does not* need to be a root domain, but it *does* need to correlate to a
+# Route53 hosted zone in the AWS account you are deploying into.
+DOMAIN_NAME
+
+# Add each environment you wish to create and deploy, e.g paper & live
+ENVIRONMENTS
+
+# Change this to your globally unique terraform s3 state bucket name
+STATE_S3_BUCKET_NAME
+```
 
 #### scripts/superalgos.setup.sh
 You will need update some keys variables in this file to match your unique
 circumstances, such as github username.
 
+### First Deployment
+If this is the first deployment into an AWS account, you will want to manually
+run the bootstrap process. You can run the included [Docker Image](tools/Docker/README.md)
+or you install [Terraform](https://www.terraform.io/) locally on your machine.
 
+Once you've edited the Makefile variables per above, and you've established a 
+suitable runtime environment, run the following:
+
+`make bootstrap`
+
+This will do a few things:
+* Edit terraform configuration files to apply the settings you've defined the `Makefile`.
+* Create the S3 bucket and DynamoDB table used for `Terraform State` tracking.
+* Move the `Terraform State` created from create procedure to its proper destination.
 

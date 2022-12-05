@@ -13,11 +13,17 @@ AWS_REGION                        = $(AWS_DEFAULT_REGION)
 # add each layer in order that needs to get applied.
 ENVIRONMENT_LAYERS                = 100-Network 150-VPN
 
-# Add each identical environment, e.g paper & live
+# Add each environment you wish to create and deploy, e.g paper & live
 ENVIRONMENTS                      = paper
 
 # The base directory where the environments can be found
 ENVIRONMENTS_BASE_DIR             = tf/environments
+
+# This is the DNS name that will be used when creating sub-zones and delegation
+# records required by the VPN, TLS Certificates, and Load Balancers.
+# This *does not* need to be a root domain, but it *does* need to correlate to a
+# Route53 hosted zone in the AWS account you are deploying into.
+DOMAIN_NAME                       = mydomain.tld
 
 # Change this to the name of your terraform lock table
 STATE_DYNAMO_TABLE_NAME           = superalgos-terraform-locks

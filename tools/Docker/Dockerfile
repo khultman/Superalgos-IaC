@@ -23,3 +23,5 @@ RUN apk add --update --no-cache aws-clie curl git gcc go make musl-dev python3 p
 RUN wget https://releases.hashicorp.com/terraform/${TERRAFORM_RELEASE}/terraform_${TERRAFORM_RELEASE}_linux_${ARCH}.zip
 RUN unzip terraform_${TERRAFORM_RELEASE}_linux_${ARCH}.zip
 RUN mv terraform /usr/bin/terraform
+
+WORKDIR /opt
