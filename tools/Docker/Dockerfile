@@ -17,7 +17,7 @@ LABEL org.label-schema.name=$IMAGE_NAME
 LABEL org.label-schema.version=$BUILD_VERSION
 
 # Install basic requirements: aws-cli curl, git, golang, make
-RUN apk add --update --no-cache aws-clie curl git gcc go make musl-dev python3 py3-pip
+RUN apk add --update --no-cache aws-cli curl git gcc go make musl-dev python3 py3-pip
 
 # Install Terraform
 RUN wget https://releases.hashicorp.com/terraform/${TERRAFORM_RELEASE}/terraform_${TERRAFORM_RELEASE}_linux_${ARCH}.zip
