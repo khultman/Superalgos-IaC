@@ -101,10 +101,12 @@ MV                               := mv
 PYTHON                           := python3
 RM                               := rm -f
 SED                              := sed
-SHELL                            := bash
+# This setting is appropriate for the included docker container.
+# If you are running in a different environment, you will likely need to update.
+SHELL                            := /bin/ash
 SORT                             := sort
 # This is the path of the terraform executable
-TERRAFORM                         = /usr/bin/terraform
+TERRAFORM                        := /usr/bin/terraform
 TOUCH                            := touch
 
 
