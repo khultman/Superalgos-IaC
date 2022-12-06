@@ -1,29 +1,66 @@
+## START: AWS Settings
+
 # Set the AWS DEFAULT REGION for use in the Makefile if it doesn't exist
-ifeq ($(AWS_DEFAULT_REGION), )
-  $(info AWS_DEFAULT_REGION is unset, setting AWS_DEFAULT_REGION)
-  AWS_DEFAULT_REGION              = us-east-1
-endif
+AWS_DEFAULT_REGION               ?= us-east-1
 
 # This is the AWS region that will be used throughout the makefile
 # Each specific use of region will be extended from here to allow you to
 # independantly modify the region for different elements of this deployment.
 AWS_REGION                        = $(AWS_DEFAULT_REGION)
 
-# For each identical environment,
-# add each layer in order that needs to get applied.
-ENVIRONMENT_LAYERS                = 100-Network 150-VPN
+## END: AWS Settings
+
+
+## START: Project Directory Variables
+## These directory variables are specific to the project.
+## If you change any project structures these variables will need to be updated.
+## All directory variables should be suffixed by `_DIR` for clarity.
+
+# The base terraform directory
+TERRAFORM_BASE_DIR                = tf
+# The base directory where the environments can be found
+ENVIRONMENTS_BASE_DIR             = $(TERRAFORM_BASE_DIR)/environments
+# The directory of the Global Envionrmnet
+GLOBAL_ENVIRONMENT_DIR            = $(ENVIRONMENTS_BASE_DIR)/global
+# template envrionment path to extend any paper/live/etc... environments from
+TEMPLATE_ENVIRONMENT_DIR          = $(ENVIRONMENTS_BASE_DIR)/template
+# This is the project relative path of the gobal state "bootstrap" layer
+TERRAFORM_GLOBAL_STATE_LAYER_DIR  = $(GLOBAL_ENVIRONMENT_DIR)/000-Terraform-State
+
+## END: Project Directory Variables
+
+
+## START: Environment & Layers Configurations
 
 # Add each environment you wish to create and deploy, e.g paper & live
 ENVIRONMENTS                      = paper
+# For each identical environment,
+# add each layer in order that needs to get applied.
+ENVIRONMENT_LAYERS                = 100-Network 150-VPN
+# These are the names of the terraform files in any given layer or module
+TERRAFORM_CONFIG_FILE             = terraform.tf
+TERRAFORM_MAIN_FILE               = main.tf
+TERRAFORM_OUTPUTS_FILE            = outputs.tf
+TERRAFORM_PROVIDER_FILE           = provider.tf
+TERRAFORM_VARIABLES_FILE          = variables.tf
+# These are the files that will be automatically edited based on unique configuration
+TERRAFORM_EDITABLE_FILES          = $(TERRAFORM_CONFIG_FILE) $(TERRAFORM_MAIN_FILE) $(TERRAFORM_PROVIDER_FILE)
 
-# The base directory where the environments can be found
-ENVIRONMENTS_BASE_DIR             = tf/environments
+## END: Environment & Layers Configurations
+
+
+## START: DNS Configuration
 
 # This is the DNS name that will be used when creating sub-zones and delegation
 # records required by the VPN, TLS Certificates, and Load Balancers.
 # This *does not* need to be a root domain, but it *does* need to correlate to a
 # Route53 hosted zone in the AWS account you are deploying into.
 DOMAIN_NAME                       = mydomain.tld
+
+## END: DNS Configuration
+
+
+## START: Remote State Configuration
 
 # Change this to the name of your terraform lock table
 STATE_DYNAMO_TABLE_NAME           = superalgos-terraform-locks
@@ -51,21 +88,7 @@ STATE_S3_BUCKET_PLACEHOLDER       = CHANGE-THE-BUCKET-NAME
 # In essence, this should be updated *very rarely, if ever at all*
 STATE_VERSION                     = 1
 
-# template envrionment path to extend any paper/live/etc... environments from
-TEMPLATE_ENVIRONMENT              = $(ENVIRONMENTS_BASE_DIR)/template
-
-# These are the names of the terraform files in any given layer or module
-TERRAFORM_CONFIG_FILE             = terraform.tf
-TERRAFORM_MAIN_FILE               = main.tf
-TERRAFORM_OUTPUTS_FILE            = outputs.tf
-TERRAFORM_PROVIDER_FILE           = provider.tf
-TERRAFORM_VARIABLES_FILE          = variables.tf
-
-# These are the files that will be automatically edited based on unique configuration
-TERRAFORM_EDITABLE_FILES          = $(TERRAFORM_CONFIG_FILE) $(TERRAFORM_MAIN_FILE) $(TERRAFORM_PROVIDER_FILE)
-
-# This is the project relative path of the gobal state "bootstrap" layer
-TERRAFORM_GLOBAL_STATE_LAYER_DIR  = $(ENVIRONMENTS_BASE_DIR)/global/000-Terraform-State
+## END: Remote State Configuration
 
 
 # Commands, override these as-needed
@@ -83,6 +106,7 @@ SORT                             := sort
 # This is the path of the terraform executable
 TERRAFORM                         = /usr/bin/terraform
 TOUCH                            := touch
+
 
 
 # $(call file-exists, file-name)

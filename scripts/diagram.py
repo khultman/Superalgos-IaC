@@ -104,6 +104,7 @@ vpn_subdomain = "vpn"
 vpn_subnet_cidr = "10.21.0.0/16"
 
 
+
 # This will generate a mapping of instance details which will be used later
 # for generating the detailed diagram
 sa_instance_mapping = [
