@@ -114,6 +114,21 @@ TOUCH                            := touch
 file-exists = $(wildcard $1)
 
 
+.PHONY: add-upstream
+add-upstream:
+	git remote add upstream git@github.com:khultman/Superalgos-IaC.git
+
+
+.PHONY: fetch-upstream
+fetch-upstream:
+	git fetch upstream
+
+
+.PHONY: update-repo
+update-repo: fetch-upstream
+	git pull upstream main
+
+
 .PHONY: bootstrap
 bootstrap: bootstrap-update-layer-config bootstrap-comment-tfconfig bootstrap-init bootstrap-apply bootstrap-uncomment-tfconfig bootstrap-migrate-state
 
