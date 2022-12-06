@@ -24,10 +24,17 @@ ENVIRONMENTS_BASE_DIR             = $(TERRAFORM_BASE_DIR)/environments
 GLOBAL_ENVIRONMENT_DIR            = $(ENVIRONMENTS_BASE_DIR)/global
 # template envrionment path to extend any paper/live/etc... environments from
 TEMPLATE_ENVIRONMENT_DIR          = $(ENVIRONMENTS_BASE_DIR)/template
+# This is the project relative path of the global dns "bootstrap" layer
+TERRAFORM_GLOBAL_DNS_LAYER_DIR    = $(ENVIRONMENTS_BASE_DIR)/050-DNS
 # This is the project relative path of the gobal state "bootstrap" layer
 TERRAFORM_GLOBAL_STATE_LAYER_DIR  = $(GLOBAL_ENVIRONMENT_DIR)/000-Terraform-State
 
 ## END: Project Directory Variables
+
+
+## START: Bootstrap Layers Config
+TERRAFORM_BOOTSTRAP_LAYER_DIRS    = $(TERRAFORM_GLOBAL_STATE_LAYER_DIR) $(TERRAFORM_GLOBAL_DNS_LAYER_DIR)
+## END: Bootstrap Layers Config
 
 
 ## START: Environment & Layers Configurations
@@ -36,7 +43,7 @@ TERRAFORM_GLOBAL_STATE_LAYER_DIR  = $(GLOBAL_ENVIRONMENT_DIR)/000-Terraform-Stat
 ENVIRONMENTS                      = paper
 # For each identical environment,
 # add each layer in order that needs to get applied.
-ENVIRONMENT_LAYERS                = 100-Network 150-VPN
+ENVIRONMENT_LAYERS                = 050-DNS 100-Network 150-VPN
 # These are the names of the terraform files in any given layer or module
 TERRAFORM_CONFIG_FILE             = terraform.tf
 TERRAFORM_MAIN_FILE               = main.tf
@@ -95,6 +102,7 @@ STATE_VERSION                     = 1
 AWK                              := awk
 CP                               := cp
 EGREP                            := egrep
+LN                               := ln
 LNDIR                            := lndir
 MKDIR                            := mkdir -p
 MV                               := mv
@@ -130,10 +138,10 @@ update-repo: fetch-upstream
 
 
 .PHONY: bootstrap
-bootstrap: bootstrap-update-layer-config bootstrap-comment-tfconfig bootstrap-init bootstrap-apply bootstrap-uncomment-tfconfig bootstrap-migrate-state
+bootstrap: bootstrap-update-layer-config bootstrap-comment-tfconfig bootstrap-init bootstrap-apply bootstrap-migrate-state
 
 .PHONY: bootstrap-init
-bootstrap-init:
+bootstrap-init: bootstrap-update-layer-config
 	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) init
 
 
@@ -169,7 +177,7 @@ bootstrap-destroy: bootstrap-plan-destroy
 
 
 .PHONY: bootstrap-migrate-state
-bootstrap-migrate-state:
+bootstrap-migrate-state: bootstrap-uncomment-tfconfig
 	@if ! test -f $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bms.completed || test $(STATE_VERSION) -gt `head -1 $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bms.completed`; then \
 		$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) init -force-copy && \
 		echo $(STATE_VERSION) > $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bms.completed; \
@@ -187,14 +195,20 @@ bootstrap-uncomment-tfconfig:
 
 .PHONY: bootstrap-update-layer-config
 bootstrap-update-layer-config:
-	@cd $(TERRAFORM_GLOBAL_STATE_LAYER_DIR); for file in $(TERRAFORM_EDITABLE_FILES); do \
-	$(SED) -i 's/$(STATE_S3_BUCKET_PLACEHOLDER)/$(STATE_S3_BUCKET_NAME)/;s/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/$(STATE_DYNAMO_TABLE_NAME)/;s/$(STATE_REGION_PLACEHOLDER)/$(STATE_REGION)/' $${file}; done
+	@for layer in $(TERRAFORM_BOOTSTRAP_LAYER_DIRS); do \
+		for file in $(TERRAFORM_EDITABLE_FILES); do \
+			$(SED) -i 's/$(STATE_S3_BUCKET_PLACEHOLDER)/$(STATE_S3_BUCKET_NAME)/;s/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/$(STATE_DYNAMO_TABLE_NAME)/;s/$(STATE_REGION_PLACEHOLDER)/$(STATE_REGION)/' $${layer}/$${file}; \
+		done; \
+	done
 
 
 .PHONY: bootstrap-update-layer-config-undo
 bootstrap-update-layer-config-undo:
-	@cd $(TERRAFORM_GLOBAL_STATE_LAYER_DIR); for file in $(TERRAFORM_EDITABLE_FILES); do \
-	$(SED) -i 's/$(STATE_S3_BUCKET_NAME)/$(STATE_S3_BUCKET_PLACEHOLDER)/;s/$(STATE_DYNAMO_TABLE_NAME)/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/;s/$(STATE_REGION)/$(STATE_REGION_PLACEHOLDER)/' $${file}; done
+	@for layer in $(TERRAFORM_BOOTSTRAP_LAYER_DIRS); do \
+		for file in $(TERRAFORM_EDITABLE_FILES); do \
+			$(SED) -i 's/$(STATE_S3_BUCKET_NAME)/$(STATE_S3_BUCKET_PLACEHOLDER)/;s/$(STATE_DYNAMO_TABLE_NAME)/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/;s/$(STATE_REGION)/$(STATE_REGION_PLACEHOLDER)/' $${layer}/$${file}; \
+		done; \
+	done
 
 
 .PHONY: diagrams
