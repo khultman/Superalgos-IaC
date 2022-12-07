@@ -138,7 +138,7 @@ update-repo: fetch-upstream
 
 
 .PHONY: bootstrap
-bootstrap: bootstrap-update-layer-config bootstrap-comment-tfconfig bootstrap-init bootstrap-state-apply bootstrap-migrate-state
+bootstrap: bootstrap-update-layer-config bootstrap-comment-tfconfig bootstrap-init bootstrap-state-apply bootstrap-migrate-state bootstrap-dns-apply
 
 .PHONY: bootstrap-init
 bootstrap-init: bootstrap-update-layer-config
@@ -154,6 +154,11 @@ bootstrap-comment-tfconfig:
 	fi
 
 
+.PHONY: bootstrap-dns-plan-apply
+bootstrap-dns-plan-apply:
+	$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_DNS_LAYER_DIR) plan -out=tf.plan -input=false -lock=true
+
+
 .PHONY: bootstrap-state-plan-apply
 bootstrap-state-plan-apply:
 	$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) plan -out=tf.plan -input=false -lock=true
@@ -165,6 +170,11 @@ bootstrap-plan-destroy:
 	@echo "You must ALSO empty the S3 bucket before bucket destruction will work."
 	@for layer in $(TERRAFORM_BOOTSTRAP_LAYER_DIRS); do \
 		$(TERRAFORM) -chdir=$${layer} plan -destroy -out=tf.plan -input=false -lock=true
+
+
+.PHONY: bootstrap-plan-apply
+bootstrap-dns-apply: bootstrap-dns-plan-apply
+	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_DNS_LAYER_DIR) apply -input=false -auto-approve -lock=true tf.plan
 
 
 .PHONY: bootstrap-state-apply
