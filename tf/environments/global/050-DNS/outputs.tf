@@ -1,14 +1,14 @@
 output "delegation_set_id" {
   description                     = "ID of Route53 delegation set"
-  value                           = aws_route53_delegation_set.delegation_set.id
+  value                           = module.superalgos-delegation-set.delegation_set_id
 }
 
 output "delegation_set_name_servers" {
   description                     = "Name servers in the Route53 delegation set"
-  value                           = aws_route53_delegation_set.delegation_set.name_servers
+  value                           = module.superalgos-delegation-set.delegation_set_name_servers
 }
 
 output "delegation_set_reference_name" {
   description                     = "Reference name used when the Route53 delegation set has been created"
-  value                           = aws_route53_delegation_set.delegation_set.reference_name
+  value                           = module.superalgos-delegation-set.reference_name
 }
