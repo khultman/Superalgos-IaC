@@ -6,7 +6,7 @@ Creates a Route53 Delegation Set.
 
 ```hcl
 module "delegation_set" {
-  source                  = "modules/platform/aws/route53/delegation-set"
+  source                  = "modules/platform/aws/route53/zone"
   reference_name          = "superalgos"
 }
 ```
