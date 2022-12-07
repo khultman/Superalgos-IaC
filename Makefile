@@ -25,7 +25,7 @@ GLOBAL_ENVIRONMENT_DIR            = $(ENVIRONMENTS_BASE_DIR)/global
 # template envrionment path to extend any paper/live/etc... environments from
 TEMPLATE_ENVIRONMENT_DIR          = $(ENVIRONMENTS_BASE_DIR)/template
 # This is the project relative path of the global dns "bootstrap" layer
-TERRAFORM_GLOBAL_DNS_LAYER_DIR    = $(ENVIRONMENTS_BASE_DIR)/050-DNS
+TERRAFORM_GLOBAL_DNS_LAYER_DIR    = $(GLOBAL_ENVIRONMENT_DIR)/050-DNS
 # This is the project relative path of the gobal state "bootstrap" layer
 TERRAFORM_GLOBAL_STATE_LAYER_DIR  = $(GLOBAL_ENVIRONMENT_DIR)/000-Terraform-State
 
