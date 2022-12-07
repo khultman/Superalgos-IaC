@@ -138,7 +138,7 @@ update-repo: fetch-upstream
 
 
 .PHONY: bootstrap
-bootstrap: bootstrap-update-layer-config bootstrap-comment-tfconfig bootstrap-init bootstrap-apply bootstrap-migrate-state
+bootstrap: bootstrap-update-layer-config bootstrap-comment-tfconfig bootstrap-init bootstrap-state-apply bootstrap-migrate-state
 
 .PHONY: bootstrap-init
 bootstrap-init: bootstrap-update-layer-config
@@ -154,8 +154,8 @@ bootstrap-comment-tfconfig:
 	fi
 
 
-.PHONY: bootstrap-plan-apply
-bootstrap-plan-apply:
+.PHONY: bootstrap-state-plan-apply
+bootstrap-state-plan-apply:
 	$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) plan -out=tf.plan -input=false -lock=true
 
 
@@ -163,17 +163,19 @@ bootstrap-plan-apply:
 bootstrap-plan-destroy:
 	@echo "You must manually edit $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/main.tf to remove the bucket lifecycle."
 	@echo "You must ALSO empty the S3 bucket before bucket destruction will work."
-	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) plan -destroy -out=tf.plan -input=false -lock=true
+	@for layer in $(TERRAFORM_BOOTSTRAP_LAYER_DIRS); do \
+		$(TERRAFORM) -chdir=$${layer} plan -destroy -out=tf.plan -input=false -lock=true
 
 
-.PHONY: bootstrap-apply
-bootstrap-apply: bootstrap-plan-apply
+.PHONY: bootstrap-state-apply
+bootstrap-state-apply: bootstrap-plan-apply
 	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) apply -input=false -auto-approve -lock=true tf.plan
 
 
 .PHONY: bootstrap-destroy
 bootstrap-destroy: bootstrap-plan-destroy
-	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) apply -input=false -auto-approve -lock=true tf.plan
+	@for layer in $(TERRAFORM_BOOTSTRAP_LAYER_DIRS); do \
+		@$(TERRAFORM) -chdir=$${layer} apply -input=false -auto-approve -lock=true tf.plan
 
 
 .PHONY: bootstrap-migrate-state
