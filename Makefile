@@ -98,6 +98,12 @@ STATE_VERSION                     = 1
 ## END: Remote State Configuration
 
 
+# This is the regex used to update the config files
+CONFIG_SUBSTITUTION               ='s/$(STATE_S3_BUCKET_PLACEHOLDER)/$(STATE_S3_BUCKET_NAME)/;s/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/$(STATE_DYNAMO_TABLE_NAME)/;s/$(STATE_REGION_PLACEHOLDER)/$(STATE_REGION)/'
+INVERSE_CONFIG_SUBSTITUTION       = 's/$(STATE_S3_BUCKET_NAME)/$(STATE_S3_BUCKET_PLACEHOLDER)/;s/$(STATE_DYNAMO_TABLE_NAME)/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/;s/$(STATE_REGION)/$(STATE_REGION_PLACEHOLDER)/'
+#
+
+
 # Commands, override these as-needed
 AWK                              := awk
 CP                               := cp
@@ -134,8 +140,23 @@ fetch-upstream:
 
 .PHONY: update-repo
 update-repo: fetch-upstream
-	git pull upstream main
+	git pull upstream main --no-rebase
+# The above should, in most cases, allow the user to allow for divergent
+# changes in the key configuration files __most__ of the time. There
+# could be unique circumstances where this git behavior might be undesired.
+# More testing required.
 
+
+# The following ~200 lines are the global environment instantiation.
+# The global envrionment consists of two layers:
+# * A remote state management layer
+# * A Core DNS layer
+#
+# In order to bootstrap terraform, a remote state storage location must be made.
+# Then the state files related to making the remote state storage must be copied
+# to the remote state.
+#
+# To minimize any unintented issues, this bootstrapping is overly verbose.
 
 .PHONY: bootstrap
 bootstrap: bootstrap-update-layer-config bootstrap-comment-tfconfig bootstrap-init bootstrap-state-apply bootstrap-migrate-state bootstrap-dns-apply
@@ -210,7 +231,7 @@ bootstrap-uncomment-tfconfig:
 bootstrap-update-layer-config:
 	@for layer in $(TERRAFORM_BOOTSTRAP_LAYER_DIRS); do \
 		for file in $(TERRAFORM_EDITABLE_FILES); do \
-			$(SED) -i 's/$(STATE_S3_BUCKET_PLACEHOLDER)/$(STATE_S3_BUCKET_NAME)/;s/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/$(STATE_DYNAMO_TABLE_NAME)/;s/$(STATE_REGION_PLACEHOLDER)/$(STATE_REGION)/' $${layer}/$${file}; \
+			$(SED) -i $(CONFIG_SUBSTITUTION) $${layer}/$${file}; \
 		done; \
 	done
 
@@ -219,20 +240,30 @@ bootstrap-update-layer-config:
 bootstrap-update-layer-config-undo:
 	@for layer in $(TERRAFORM_BOOTSTRAP_LAYER_DIRS); do \
 		for file in $(TERRAFORM_EDITABLE_FILES); do \
-			$(SED) -i 's/$(STATE_S3_BUCKET_NAME)/$(STATE_S3_BUCKET_PLACEHOLDER)/;s/$(STATE_DYNAMO_TABLE_NAME)/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/;s/$(STATE_REGION)/$(STATE_REGION_PLACEHOLDER)/' $${layer}/$${file}; \
+			$(SED) -i $(INVERSE_CONFIG_SUBSTITUTION) $${layer}/$${file}; \
 		done; \
 	done
 
+# End of global environment bootstrap
 
+
+
+# This will generate the diagrams and store/overwrite them in design folder
 .PHONY: diagrams
 diagrams:
 	@$(PYTHON) scripts/diagram.py -o design
 
 
+# This will copy the 
 .PHONY: tf-environments
 tf-envrionments:
 	@for environment_name in $(ENVIRONMENTS); do \
 		$(CP) -r $(TEMPLATE_ENVIRONMENT) $(ENVIRONMENTS_BASE_DIR)/$$environment_name; \
+		@for layer in $(ENVIRONMENT_LAYERS); do \
+			for file in $(TERRAFORM_EDITABLE_FILES); do \
+				$(SED) -i $(CONFIG_SUBSTITUTION) $(ENVIRONMENTS_BASE_DIR)/$$environment_name/$${layer}/$${file}; \
+			done; \
+		done; \
 	done
 
 
