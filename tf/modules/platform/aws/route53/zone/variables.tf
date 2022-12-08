@@ -10,7 +10,7 @@ variable "comment" {
 }
 
 variable "delegation_set_id" {
-  descriptipn                     = "The ID of the reusable delegation set whose NS records you want to assign to the hosted zone. Conflicts with vpc as delegation sets can only be used for public zones."
+  descdescription                 = "The ID of the reusable delegation set whose NS records you want to assign to the hosted zone. Conflicts with vpc as delegation sets can only be used for public zones."
   default                         = null
 }
 
@@ -35,5 +35,5 @@ variable "tags_for_resource" {
 
 variable "vpc" {
   description                     = "Configuration block(s) specifying VPC(s) to associate with a private hosted zone. Conflicts with the delegation_set_id argument in this resource and any aws_route53_zone_association resource specifying the same zone ID. Detailed below."
-  type                            = list(map)
+  type                            = list(map(string))
 }
