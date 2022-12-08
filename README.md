@@ -105,7 +105,8 @@ add to your root domain as a delegation record for the newly created subdomain.
 If you are unfamiliar with this process, see the [Route53 Documentation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingNewSubdomain.html).
 This blog post also contains a good overview of the process: [How to Create a Subdomain in Amazon Route 53](https://medium.com/@deep_blue_day/how-to-create-a-subdomain-in-amazon-route-53-81918654f5bf).
 
-
+Example output:
+![Bootstrap Output](docs/img/bootstrap_ns_records_outputs.png)
 
 #### Inflate the Environment Configurations
 ***Note: This is a one-time process.***
@@ -152,7 +153,7 @@ environment. This will allow you to isolate each environment into its own AWS
 account, maintain a separate history of changes for each environment, and also 
 allow you to maintain a separate set of secrets for each environment. 
 This does require a bit more work to setup and maintain, and the trade-off is
-that you have some duplication of common resources, such as the bootstrap layer.
+that you will have some duplication of common resources, such as the bootstrap layer.
 
 #### Deploying the Core Network
 Once the bootstrap process is complete, you can deploy the core network.
