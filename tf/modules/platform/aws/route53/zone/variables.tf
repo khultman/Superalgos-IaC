@@ -10,7 +10,7 @@ variable "comment" {
 }
 
 variable "delegation_set_id" {
-  descdescription                 = "The ID of the reusable delegation set whose NS records you want to assign to the hosted zone. Conflicts with vpc as delegation sets can only be used for public zones."
+  description                     = "The ID of the reusable delegation set whose NS records you want to assign to the hosted zone. Conflicts with vpc as delegation sets can only be used for public zones."
   default                         = null
 }
 
