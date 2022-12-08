@@ -109,10 +109,22 @@ STATE_REGION_PLACEHOLDER          = CHANGE-THE-REGION
 # This is the replacement key in the terraform files for the S3 state bucket
 STATE_S3_BUCKET_PLACEHOLDER       = CHANGE-THE-BUCKET-NAME
 
-# This is the regex used to update the bootstrap config files
-CONFIG_SUBSTITUTION               = 's/$(STATE_S3_BUCKET_PLACEHOLDER)/$(STATE_S3_BUCKET_NAME)/;s/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/$(STATE_DYNAMO_TABLE_NAME)/;s/$(STATE_REGION_PLACEHOLDER)/$(STATE_REGION)/;s/$(ROOT_DOMAIN_NAME_PLACEHOLDER)/$(ROOT_DOMAIN_NAME)/'
-INVERSE_CONFIG_SUBSTITUTION       = 's/$(STATE_S3_BUCKET_NAME)/$(STATE_S3_BUCKET_PLACEHOLDER)/;s/$(STATE_DYNAMO_TABLE_NAME)/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/;s/$(STATE_REGION)/$(STATE_REGION_PLACEHOLDER)/;s/$(ROOT_DOMAIN_NAME)/$(ROOT_DOMAIN_NAME_PLACEHOLDER)/'
+# These are the regex's used to update the bootstrap config files
+# I_ prefix is for inverse substitution
+CS_STATE_BUCKET                   = s/$(STATE_S3_BUCKET_PLACEHOLDER)/$(STATE_S3_BUCKET_NAME)/
+I_CS_STATE_BUCKET                 = s/$(STATE_S3_BUCKET_NAME)/$(STATE_S3_BUCKET_PLACEHOLDER)/
 
+CS_STATE_DB                       = s/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/$(STATE_DYNAMO_TABLE_NAME)/
+I_CS_STATE_DB                     = s/$(STATE_DYNAMO_TABLE_NAME)/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/
+
+CS_STATE_REGION                   = s/$(STATE_REGION_PLACEHOLDER)/$(STATE_REGION)/
+I_CS_STATE_REGION                 = s/$(STATE_REGION)/$(STATE_REGION_PLACEHOLDER)/
+
+CS_ROOT_DOMAIN_NAME               = s/$(ROOT_DOMAIN_NAME_PLACEHOLDER)/$(ROOT_DOMAIN_NAME)/
+I_CS_ROOT_DOMAIN_NAME             = s/$(ROOT_DOMAIN_NAME)/$(ROOT_DOMAIN_NAME_PLACEHOLDER)/
+
+CONFIG_SUBSTITUTION               = '$(CS_STATE_BUCKET);$(CS_STATE_DB);$(CS_STATE_REGION);$(CS_ROOT_DOMAIN_NAME)'
+INVERSE_CONFIG_SUBSTITUTION       = '$(I_CS_STATE_BUCKET);$(I_CS_STATE_DB);$(I_CS_STATE_REGION);$(I_CS_ROOT_DOMAIN_NAME)'
 ## END: Terraform Configuration Substitutions
 
 
@@ -168,6 +180,7 @@ update-repo: fetch-upstream
 # More testing required.
 
 
+#### START OF BOOTSTRAP LAYER ####
 # The following ~200 lines are the global environment instantiation.
 # The global envrionment consists of two layers:
 # * A remote state management layer
@@ -288,7 +301,8 @@ diagrams:
 	@$(PYTHON) scripts/diagram.py -o design
 
 
-# This will copy the 
+# This will copy the template environment to the environment-specific folders
+# for each environment in the list of environments: $(ENVIRONMENTS)
 .PHONY: tf-environments
 tf-envrionments:
 	@for environment_name in $(ENVIRONMENTS); do \
