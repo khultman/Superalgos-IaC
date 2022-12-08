@@ -176,86 +176,11 @@ update-repo: fetch-upstream
 # To minimize any unintented issues, this bootstrapping is overly verbose.
 
 .PHONY: bootstrap
-bootstrap: bootstrap-update-layer-config bootstrap-comment-tfconfig bootstrap-init bootstrap-state-apply bootstrap-migrate-state bootstrap-dns-apply
-
-.PHONY: bootstrap-init
-bootstrap-init: bootstrap-update-layer-config
-	@for layer in $(TERRAFORM_BOOTSTRAP_LAYER_DIRS); do \
-		$(TERRAFORM) -chdir=$${layer} init; \
-	done
+bootstrap: bootstrap-configs-set bootstrap-state-tfconfig-comment bootstrap-init bootstrap-state-apply bootstrap-state-migrate bootstrap-dns-apply
 
 
-.PHONY: bootstrap-comment-tfconfig
-bootstrap-comment-tfconfig:
-	@if ! test -f $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bct.completed || test $(STATE_VERSION) -gt `head -1 $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bct.completed`; then \
-		echo "Commenting out configuration in $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/$(TERRAFORM_CONFIG_FILE)"; \
-		cd $(TERRAFORM_GLOBAL_STATE_LAYER_DIR); sed -i '/^terraform {/,/^}/s/^/#/'  $(TERRAFORM_CONFIG_FILE) && \
-		echo $(STATE_VERSION) > bct.completed; \
-	fi
-
-
-.PHONY: bootstrap-dns-plan-apply
-bootstrap-dns-plan-apply: bootstrap-dns-config
-	$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_DNS_LAYER_DIR) plan -out=tf.plan -input=false -lock=true
-
-
-.PHONY: bootstrap-state-plan-apply
-bootstrap-state-plan-apply:
-	$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) plan -out=tf.plan -input=false -lock=true
-
-
-.PHONY: bootstrap-plan-destroy
-bootstrap-plan-destroy:
-	@echo "You must manually edit $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/main.tf to remove the bucket lifecycle."
-	@echo "You must ALSO empty the S3 bucket before bucket destruction will work."
-	@for layer in $(TERRAFORM_BOOTSTRAP_LAYER_DIRS); do \
-		$(TERRAFORM) -chdir=$${layer} plan -destroy -out=tf.plan -input=false -lock=true
-
-
-.PHONY: bootstrap-plan-apply
-bootstrap-dns-apply: bootstrap-dns-plan-apply
-	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_DNS_LAYER_DIR) apply -input=false -auto-approve -lock=true tf.plan && \
-	$(call plan-successful, $(TERRAFORM_GLOBAL_DNS_LAYER_DIR)) || \
-	$(call plan-failed, $(TERRAFORM_GLOBAL_DNS_LAYER_DIR))
-
-
-.PHONY: bootstrap-dns-config
-bootstrap-dns-config:
-	@cd $(TERRAFORM_GLOBAL_DNS_LAYER_DIR); \
-	$(SED) -i $(CONFIG_SUBSTITUTION) $(TERRAFORM_USER_VARIABLES_FILE)
-
-.PHONY: bootstrap-state-apply
-bootstrap-state-apply: bootstrap-plan-apply
-	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) apply -input=false -auto-approve -lock=true tf.plan && \
-	$(call plan-successful, $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)) || \
-	$(call plan-failed, $(TERRAFORM_GLOBAL_STATE_LAYER_DIR))
-
-
-.PHONY: bootstrap-destroy
-bootstrap-destroy: bootstrap-plan-destroy
-	@for layer in $(TERRAFORM_BOOTSTRAP_LAYER_DIRS); do \
-		@$(TERRAFORM) -chdir=$${layer} apply -input=false -auto-approve -lock=true tf.plan
-
-
-.PHONY: bootstrap-migrate-state
-bootstrap-migrate-state: bootstrap-uncomment-tfconfig
-	@if ! test -f $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bms.completed || test $(STATE_VERSION) -gt `head -1 $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bms.completed`; then \
-		$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) init -force-copy && \
-		echo $(STATE_VERSION) > $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bms.completed; \
-	fi
-
-
-.PHONY: bootstrap-uncomment-tfconfig
-bootstrap-uncomment-tfconfig:
-	@if ! test -f $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/but.completed || test $(STATE_VERSION) -gt `head -1 $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/but.completed`; then \
-		echo "Uncommenting configuration in $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/$(TERRAFORM_CONFIG_FILE)"; \
-		cd $(TERRAFORM_GLOBAL_STATE_LAYER_DIR); $(SED) -i '/^#terraform {/,/^#}/s/^#//' $(TERRAFORM_CONFIG_FILE) && \
-		echo $(STATE_VERSION) > but.completed; \
-	fi
-
-
-.PHONY: bootstrap-update-layer-config
-bootstrap-update-layer-config:
+.PHONY: bootstrap-configs-update
+bootstrap-configs-set:
 	@for layer in $(TERRAFORM_BOOTSTRAP_LAYER_DIRS); do \
 		for file in $(TERRAFORM_EDITABLE_FILES); do \
 			$(SED) -i $(CONFIG_SUBSTITUTION) $${layer}/$${file}; \
@@ -263,13 +188,91 @@ bootstrap-update-layer-config:
 	done
 
 
-.PHONY: bootstrap-update-layer-config-undo
-bootstrap-update-layer-config-undo:
+.PHONY: bootstrap-configs-reset
+bootstrap-configs-unset:
 	@for layer in $(TERRAFORM_BOOTSTRAP_LAYER_DIRS); do \
 		for file in $(TERRAFORM_EDITABLE_FILES); do \
 			$(SED) -i $(INVERSE_CONFIG_SUBSTITUTION) $${layer}/$${file}; \
 		done; \
 	done
+
+
+.PHONY: bootstrap-destroy-plan
+bootstrap-destroy-plan:
+	@echo "You must manually edit $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/main.tf to remove the bucket lifecycle."
+	@echo "You must ALSO empty the S3 bucket before bucket destruction will work."
+	@for layer in $(TERRAFORM_BOOTSTRAP_LAYER_DIRS); do \
+		$(TERRAFORM) -chdir=$${layer} plan -destroy -out=tf.plan -input=false -lock=true; \
+	done
+
+.PHONY: bootstrap-destroy-apply
+bootstrap-state-destroy-apply: bootstrap-destroy-plan
+	@for layer in $(TERRAFORM_BOOTSTRAP_LAYER_DIRS); do \
+		@$(TERRAFORM) -chdir=$${layer} apply -input=false -auto-approve -lock=true tf.plan
+
+
+.PHONY: bootstrap-dns-apply
+bootstrap-dns-apply: bootstrap-dns-config-set bootstrap-dns-plan
+	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_DNS_LAYER_DIR) apply -input=false -auto-approve -lock=true tf.plan && \
+	$(call plan-successful, $(TERRAFORM_GLOBAL_DNS_LAYER_DIR)) || \
+	$(call plan-failed, $(TERRAFORM_GLOBAL_DNS_LAYER_DIR))
+
+.PHONY: bootstrap-dns-config-set
+bootstrap-dns-config-set:
+	@cd $(TERRAFORM_GLOBAL_DNS_LAYER_DIR); \
+	$(SED) -i $(CONFIG_SUBSTITUTION) $(TERRAFORM_USER_VARIABLES_FILE)
+
+
+.PHONY: bootstrap-dns-plan
+bootstrap-dns-plan: bootstrap-dns-config-set
+	$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_DNS_LAYER_DIR) plan -out=tf.plan -input=false -lock=true
+
+
+.PHONY: bootstrap-init
+bootstrap-init: bootstrap-configs-update
+	@for layer in $(TERRAFORM_BOOTSTRAP_LAYER_DIRS); do \
+		$(TERRAFORM) -chdir=$${layer} init; \
+	done
+
+
+.PHONY: bootstrap-state-apply
+bootstrap-state-apply: bootstrap-state-plan
+	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) apply -input=false -auto-approve -lock=true tf.plan && \
+	$(call plan-successful, $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)) || \
+	$(call plan-failed, $(TERRAFORM_GLOBAL_STATE_LAYER_DIR))
+
+
+.PHONY: bootstrap-state-plan
+bootstrap-state-plan: bootstrap-configs-set
+	$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) plan -out=tf.plan -input=false -lock=true
+
+
+
+.PHONY: bootstrap-state-migrate
+bootstrap-state-migrate: bootstrap-uncomment-tfconfig
+	@if ! test -f $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bms.completed || test $(STATE_VERSION) -gt `head -1 $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bms.completed`; then \
+		$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) init -force-copy && \
+		echo $(STATE_VERSION) > $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bms.completed; \
+	fi
+
+
+.PHONY: bootstrap-state-tfconfig-comment
+bootstrap-state-tfconfig-comment:
+	@if ! test -f $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bct.completed || test $(STATE_VERSION) -gt `head -1 $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/bct.completed`; then \
+		echo "Commenting out configuration in $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/$(TERRAFORM_CONFIG_FILE)"; \
+		cd $(TERRAFORM_GLOBAL_STATE_LAYER_DIR); sed -i '/^terraform {/,/^}/s/^/#/'  $(TERRAFORM_CONFIG_FILE) && \
+		echo $(STATE_VERSION) > bct.completed; \
+	fi
+
+
+.PHONY: bootstrap-uncomment-tfconfig
+bootstrap-state-tfconfig-uncomment:
+	@if ! test -f $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/but.completed || test $(STATE_VERSION) -gt `head -1 $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/but.completed`; then \
+		echo "Uncommenting configuration in $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)/$(TERRAFORM_CONFIG_FILE)"; \
+		cd $(TERRAFORM_GLOBAL_STATE_LAYER_DIR); $(SED) -i '/^#terraform {/,/^#}/s/^#//' $(TERRAFORM_CONFIG_FILE) && \
+		echo $(STATE_VERSION) > but.completed; \
+	fi
+
 
 # End of global environment bootstrap
 
