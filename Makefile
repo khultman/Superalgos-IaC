@@ -50,6 +50,7 @@ TERRAFORM_CONFIG_FILE             = terraform.tf
 TERRAFORM_MAIN_FILE               = main.tf
 TERRAFORM_OUTPUTS_FILE            = outputs.tf
 TERRAFORM_PROVIDER_FILE           = provider.tf
+TERRAFORM_USER_VARIABLES_FILE     = terraform.tfvars
 TERRAFORM_VARIABLES_FILE          = variables.tf
 # These are the files that will be automatically edited based on unique configuration
 TERRAFORM_EDITABLE_FILES          = $(TERRAFORM_CONFIG_FILE) $(TERRAFORM_MAIN_FILE) $(TERRAFORM_PROVIDER_FILE)
@@ -73,20 +74,11 @@ ROOT_DOMAIN_NAME                   = superalgos.mydomain.tld
 # Change this to the name of your terraform lock table
 STATE_DYNAMO_TABLE_NAME           = superalgos-terraform-locks
 
-# This is the replacement key in the terraform files for the terraform lock table
-STATE_DYNAMO_TABLE_PLACEHOLDER    = CHANGE-THE-TABLE-NAME
-
 # Change this to your terraform state region if different than your default region
 STATE_REGION                      = $(AWS_REGION)
 
-# This is the replacement key in the terraform files for the region
-STATE_REGION_PLACEHOLDER          = CHANGE-THE-REGION
-
 # Change this to your globally unique terraform s3 state bucket name
 STATE_S3_BUCKET_NAME              = superalgos-terraform-state
-
-# This is the replacement key in the terraform files for the S3 state bucket
-STATE_S3_BUCKET_PLACEHOLDER       = CHANGE-THE-BUCKET-NAME
 
 # This is a version identifier that will be used for state layer checks.
 # This is intended to be a simple integer, incremented only when a major change
@@ -99,10 +91,25 @@ STATE_VERSION                     = 1
 ## END: Remote State Configuration
 
 
+## START: Terraform Configuration Substitutions
+
+# This is the replacement key in the terraform files for the root domain name
+ROOT_DOMAIN_NAME_PLACEHOLDER      = CHANGE-THE-ROOT-DOMAIN-NAME
+
+# This is the replacement key in the terraform files for the terraform lock table
+STATE_DYNAMO_TABLE_PLACEHOLDER    = CHANGE-THE-TABLE-NAME
+
+# This is the replacement key in the terraform files for the region
+STATE_REGION_PLACEHOLDER          = CHANGE-THE-REGION
+
+# This is the replacement key in the terraform files for the S3 state bucket
+STATE_S3_BUCKET_PLACEHOLDER       = CHANGE-THE-BUCKET-NAME
+
 # This is the regex used to update the bootstrap config files
-CONFIG_SUBSTITUTION               ='s/$(STATE_S3_BUCKET_PLACEHOLDER)/$(STATE_S3_BUCKET_NAME)/;s/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/$(STATE_DYNAMO_TABLE_NAME)/;s/$(STATE_REGION_PLACEHOLDER)/$(STATE_REGION)/'
-INVERSE_CONFIG_SUBSTITUTION       = 's/$(STATE_S3_BUCKET_NAME)/$(STATE_S3_BUCKET_PLACEHOLDER)/;s/$(STATE_DYNAMO_TABLE_NAME)/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/;s/$(STATE_REGION)/$(STATE_REGION_PLACEHOLDER)/'
-#
+CONFIG_SUBSTITUTION               = 's/$(STATE_S3_BUCKET_PLACEHOLDER)/$(STATE_S3_BUCKET_NAME)/;s/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/$(STATE_DYNAMO_TABLE_NAME)/;s/$(STATE_REGION_PLACEHOLDER)/$(STATE_REGION)/;s/$(ROOT_DOMAIN_NAME_PLACEHOLDER)/$(ROOT_DOMAIN_NAME)/'
+INVERSE_CONFIG_SUBSTITUTION       = 's/$(STATE_S3_BUCKET_NAME)/$(STATE_S3_BUCKET_PLACEHOLDER)/;s/$(STATE_DYNAMO_TABLE_NAME)/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/;s/$(STATE_REGION)/$(STATE_REGION_PLACEHOLDER)/;s/$(ROOT_DOMAIN_NAME)/$(ROOT_DOMAIN_NAME_PLACEHOLDER)/'
+
+## END: Terraform Configuration Substitutions
 
 
 # Commands, override these as-needed
@@ -178,7 +185,7 @@ bootstrap-comment-tfconfig:
 
 
 .PHONY: bootstrap-dns-plan-apply
-bootstrap-dns-plan-apply:
+bootstrap-dns-plan-apply: bootstrap-dns-config
 	$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_DNS_LAYER_DIR) plan -out=tf.plan -input=false -lock=true
 
 
@@ -199,6 +206,11 @@ bootstrap-plan-destroy:
 bootstrap-dns-apply: bootstrap-dns-plan-apply
 	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_DNS_LAYER_DIR) apply -input=false -auto-approve -lock=true tf.plan
 
+
+.PHONY: bootstrap-dns-config
+bootstrap-dns-config:
+	@cd $(TERRAFORM_GLOBAL_DNS_LAYER_DIR); \
+	$(SED) -i $(CONFIG_SUBSTITUTION) $(TERRAFORM_USER_VARIABLES_FILE)
 
 .PHONY: bootstrap-state-apply
 bootstrap-state-apply: bootstrap-plan-apply
