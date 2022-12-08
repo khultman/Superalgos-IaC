@@ -97,6 +97,9 @@ STATE_VERSION                     = 1
 
 ## START: Terraform Configuration Substitutions
 
+# This is the replacement key for each environment DNS name/zone
+ENVIRONMENT_DNS_NAME_PLACEHOLDER  = CHANGE-THE-ENVIRONMENT-DNS-NAME
+
 # This is the replacement key in the terraform files for the root domain name
 ROOT_DOMAIN_NAME_PLACEHOLDER      = CHANGE-THE-ROOT-DOMAIN-NAME
 
