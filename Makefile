@@ -40,6 +40,7 @@ TERRAFORM_BOOTSTRAP_LAYER_DIRS    = $(TERRAFORM_GLOBAL_STATE_LAYER_DIR) $(TERRAF
 ## START: Environment & Layers Configurations
 
 # Add each environment you wish to create and deploy, e.g paper & live
+# ENVIRONMENTS                      = paper live
 ENVIRONMENTS                      = paper
 # For each identical environment,
 # add each layer in order that needs to get applied.
@@ -60,9 +61,9 @@ TERRAFORM_EDITABLE_FILES          = $(TERRAFORM_CONFIG_FILE) $(TERRAFORM_MAIN_FI
 
 # This is the DNS name that will be used when creating sub-zones and delegation
 # records required by the VPN, TLS Certificates, and Load Balancers.
-# This *does not* need to be a root domain, but it *does* need to correlate to a
-# Route53 hosted zone in the AWS account you are deploying into.
-DOMAIN_NAME                       = mydomain.tld
+# The bootstrap DNS layer will create a zone for this domain name, and you will
+# need to create a delegation record for this zone in your root domain.
+ROOT_DOMAIN_NAME                   = superalgos.mydomain.tld
 
 ## END: DNS Configuration
 
@@ -98,7 +99,7 @@ STATE_VERSION                     = 1
 ## END: Remote State Configuration
 
 
-# This is the regex used to update the config files
+# This is the regex used to update the bootstrap config files
 CONFIG_SUBSTITUTION               ='s/$(STATE_S3_BUCKET_PLACEHOLDER)/$(STATE_S3_BUCKET_NAME)/;s/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/$(STATE_DYNAMO_TABLE_NAME)/;s/$(STATE_REGION_PLACEHOLDER)/$(STATE_REGION)/'
 INVERSE_CONFIG_SUBSTITUTION       = 's/$(STATE_S3_BUCKET_NAME)/$(STATE_S3_BUCKET_PLACEHOLDER)/;s/$(STATE_DYNAMO_TABLE_NAME)/$(STATE_DYNAMO_TABLE_PLACEHOLDER)/;s/$(STATE_REGION)/$(STATE_REGION_PLACEHOLDER)/'
 #

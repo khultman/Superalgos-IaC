@@ -52,9 +52,9 @@ At a minimum, you should set these variables to appropriate values:
 ```
 # This is the DNS name that will be used when creating sub-zones and delegation
 # records required by the VPN, TLS Certificates, and Load Balancers.
-# This *does not* need to be a root domain, but it *does* need to correlate to a
-# Route53 hosted zone in the AWS account you are deploying into.
-DOMAIN_NAME
+# The bootstrap DNS layer will create a zone for this domain name, and you will
+# need to create a delegation record for this zone in your root domain.
+ROOT_DOMAIN_NAME
 
 # Add each environment you wish to create and deploy, e.g paper & live
 ENVIRONMENTS
