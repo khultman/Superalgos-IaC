@@ -172,7 +172,7 @@ bootstrap: bootstrap-update-layer-config bootstrap-comment-tfconfig bootstrap-in
 .PHONY: bootstrap-init
 bootstrap-init: bootstrap-update-layer-config
 	@for layer in $(TERRAFORM_BOOTSTRAP_LAYER_DIRS); do \
-		@$(TERRAFORM) -chdir=$${layer} init; \
+		$(TERRAFORM) -chdir=$${layer} init; \
 	done
 
 
