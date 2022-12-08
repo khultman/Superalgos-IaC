@@ -129,11 +129,20 @@ SORT                             := sort
 TERRAFORM                        := /usr/bin/terraform
 TOUCH                            := touch
 
+TIMESTAMP                        := $(shell date +%Y%m%d%H%M%S)
 
 
 # $(call file-exists, file-name)
 #   Return non-null if a file exists.
 file-exists = $(wildcard $1)
+
+# $(call plan-successful, plan-dir)
+#   Moves the plan file to a unique name indicating success.
+plan-successful = $(MV) $1/tf.plan $1/tf.$(TIMESTAMP).applied.plan
+
+# $(call plan-failed, plan-dir)
+#   Moves the plan file to a unique name indicating failure.
+plan-failed = $(MV) $1/tf.plan $1/tf.$(TIMESTAMP).failed.plan
 
 
 .PHONY: add-upstream
@@ -205,7 +214,9 @@ bootstrap-plan-destroy:
 
 .PHONY: bootstrap-plan-apply
 bootstrap-dns-apply: bootstrap-dns-plan-apply
-	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_DNS_LAYER_DIR) apply -input=false -auto-approve -lock=true tf.plan
+	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_DNS_LAYER_DIR) apply -input=false -auto-approve -lock=true tf.plan && \
+	$(call plan-successful, $(TERRAFORM_GLOBAL_DNS_LAYER_DIR)) || \
+	$(call plan-failed, $(TERRAFORM_GLOBAL_DNS_LAYER_DIR))
 
 
 .PHONY: bootstrap-dns-config
@@ -215,7 +226,9 @@ bootstrap-dns-config:
 
 .PHONY: bootstrap-state-apply
 bootstrap-state-apply: bootstrap-plan-apply
-	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) apply -input=false -auto-approve -lock=true tf.plan
+	@$(TERRAFORM) -chdir=$(TERRAFORM_GLOBAL_STATE_LAYER_DIR) apply -input=false -auto-approve -lock=true tf.plan && \
+	$(call plan-successful, $(TERRAFORM_GLOBAL_STATE_LAYER_DIR)) || \
+	$(call plan-failed, $(TERRAFORM_GLOBAL_STATE_LAYER_DIR))
 
 
 .PHONY: bootstrap-destroy
@@ -283,6 +296,6 @@ tf-envrionments:
 
 .PHONY: test
 test:
-	@echo "Test"
+	@aws sts get-caller-identity
 
 
