@@ -13,7 +13,7 @@ output "name_servers" {
   value                           = aws_route53_zone.zone.name_servers
 }
 
-putput "primary_name_server" {
+output "primary_name_server" {
   description                     = "The Route 53 name server that created the SOA record."
   value                           = aws_route53_zone.zone.name_servers
 }
