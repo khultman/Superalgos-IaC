@@ -5,12 +5,14 @@ Creates a Route53 Delegation Set.
 ## Usage
 
 ```hcl
-module "delegation_set" {
+module "hosted-zone-xyz" {
   source                  = "modules/platform/aws/route53/zone"
   delegation_set_id       = module.superalgos-delegation-set.id
   force_destroy           = true
 }
 ```
+
+```hcl
 data "terraform_remote_state" "network" {
   backend                 = "s3"
 
@@ -21,7 +23,7 @@ data "terraform_remote_state" "network" {
   }
 }
 
-module "delegation_set" {
+module "hosted-zone-xyz" {
   source                  = "modules/platform/aws/route53/zone"
   force_destroy           = true
   vpc                     = [
@@ -30,8 +32,6 @@ module "delegation_set" {
     }
   ]
 }
-```hcl
-
 ```
 
 ## Inputs
