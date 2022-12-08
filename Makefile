@@ -91,6 +91,10 @@ STATE_VERSION                     = 1
 ## END: Remote State Configuration
 
 
+#### END OF USER CUSTOMIZABLE VARIABLES ####
+# Everything below this line should not be modified unless you know what you are doing.
+
+
 ## START: Terraform Configuration Substitutions
 
 # This is the replacement key in the terraform files for the root domain name
