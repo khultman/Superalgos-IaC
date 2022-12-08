@@ -37,32 +37,32 @@ variable "health_check_id" {
 
 variable "alias" {
     description                   = "An alias block. Conflicts with ttl & records."
-    default                       = null
+    default                       = []
 }
 
 variable "failover_routing_policy" {
     description                   = "A block indicating the routing behavior when associated health check fails. Conflicts with any other routing policy."
-    default                       = null
+    default                       = []
 }
 
 variable "geolocation_routing_policy" {
     description                   = "A block indicating the routing behavior based on geographic location. Conflicts with any other routing policy."
-    default                       = null
+    default                       = []
 }
 
 variable "latency_routing_policy" {
     description                   = "A block indicating the routing behavior based on latency. Conflicts with any other routing policy."
-    default                       = null
+    default                       = []
 }
 
 variable "weighted_routing_policy" {
     description                   = "A block indicating the routing behavior based on weighted routing. Conflicts with any other routing policy."
-    default                       = null
+    default                       = []
 }
 
 variable "multivalue_answer_routing_policy" {
     description                   = "A block indicating the routing behavior based on multivalue answer routing. Conflicts with any other routing policy."
-    default                       = null
+    default                       = []
 }
 
 variable "tags" {
