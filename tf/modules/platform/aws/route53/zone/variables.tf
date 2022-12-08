@@ -23,17 +23,18 @@ variable "force_destroy" {
 variable "tags" {
   description                     = "A map of tags to assign to resources"
   type                            = map(string)
-  default                         = {}
+  default                         = null
 }
 
 
 variable "tags_for_resource" {
   description                     = "A nested map of tags to assign to specific resource types"
   type                            = map(map(string))
-  default                         = {}
+  default                         = null
 }
 
 variable "vpc" {
   description                     = "Configuration block(s) specifying VPC(s) to associate with a private hosted zone. Conflicts with the delegation_set_id argument in this resource and any aws_route53_zone_association resource specifying the same zone ID. Detailed below."
   type                            = list(map(string))
+  default                         = null
 }
