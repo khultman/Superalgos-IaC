@@ -11,7 +11,7 @@ resource "aws_route53_record" "nsrecord" {
   allow_overwrite                  = var.allow_overwrite
 
   dynamic "alias" {
-    for_each                      = var.alias
+    for_each                      = try(var.alias != null ? tolist(var.alias) : [], [])
     content {
       name                        = alias.name
       zone_id                     = alias.zone_id
