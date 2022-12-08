@@ -48,7 +48,7 @@ terraform.rc
 .terraform.lock.hcl
 
 # Ignore the plan files
-tf.plan
+*.plan
 
 # Ignore the state files we might leave
 .aborted
