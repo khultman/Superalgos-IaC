@@ -44,7 +44,7 @@ TERRAFORM_BOOTSTRAP_LAYER_DIRS    = $(TERRAFORM_GLOBAL_STATE_LAYER_DIR) $(TERRAF
 ENVIRONMENTS                      = paper
 # For each identical environment,
 # add each layer in order that needs to get applied.
-ENVIRONMENT_LAYERS                = 050-DNS 100-Network 150-VPN
+ENVIRONMENT_LAYERS                = 100-Network 150-DNS 200-VPN
 # These are the names of the terraform files in any given layer or module
 TERRAFORM_CONFIG_FILE             = terraform.tf
 TERRAFORM_MAIN_FILE               = main.tf
