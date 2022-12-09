@@ -3,7 +3,7 @@ terraform {
   backend "s3" {
     # Replace this with your bucket name!
     bucket                        = "CHANGE-THE-BUCKET-NAME"
-    key                           = "CHANGE-THE-ENVIRONMENT-NAME/150-VPN/terraform.tfstate"
+    key                           = "CHANGE-THE-ENVIRONMENT-NAME/200-VPN/terraform.tfstate"
     region                        = "CHANGE-THE-REGION"
 
     # Replace this with your DynamoDB table name!
