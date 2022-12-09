@@ -40,8 +40,21 @@
 | Cost effective      | |
 
 
+## Authentication Layer
+
+* The authentication layer will be provided by AWS Cognito + Application Load Balancer (ALB)
+  * Why not implement this in Nginx?
+    * This was considered.
+    * CONS:
+      * Introduces the problem of password lifecycle management and storage.
+      * Increases the complexity of the deployment.
+    * PROS:
+      * Makes the deployment more portable.
+
+
 ## Management Access
 
 * A client vpn will be established to the bastion subnets
 * SSH access to the `bastion` host security group will be permitted from the client vpn source address
 * Application Security Group will permit SSH access from the Bastion Security Group
+
