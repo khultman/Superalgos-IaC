@@ -5,5 +5,6 @@ variable "reference_name" {
 
 variable "dns_domain_name" {
     description                   = "DNS Domain Name"
+    type                          = string
     default                       = "hosted.superalgos.org"
 }
