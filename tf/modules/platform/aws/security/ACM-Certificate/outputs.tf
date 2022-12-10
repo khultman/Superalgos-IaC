@@ -9,6 +9,12 @@ output "certificate_domain_name" {
   value                           = aws_acm_certificate.cert.domain_name
 }
 
+
+output "certificate_validation_arns" {
+  description                     = "The ARNs of the validation records"
+  value                           = aws_acm_certificate.cert.validation_arns
+}
+
 output "certificate_status" {
   description                     = "The status of the certificate"
   value                           = aws_acm_certificate.cert.status

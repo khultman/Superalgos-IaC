@@ -22,3 +22,11 @@ module "acm-certificate" {
 | tags                       | map     | -                   | no            | A map of tags to assign to resources 
 | tags_for_resource          | map     | -                   | no            | A nested map of tags to assign to specific resource types
 | zone_id                    | string  | -                   | yes           | The Route53 Zone ID
+
+## Outputs
+
+| Name                       | Description
+|----------------------------|------------
+| certificate_arn            | The ARN of the certificate
+| certificate_domain_name    | The domain name for which the certificate was issued
+| certificate_validation_arn | The ARN of the certificate validation
