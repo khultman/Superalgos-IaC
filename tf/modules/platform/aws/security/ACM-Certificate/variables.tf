@@ -17,3 +17,8 @@ variable "tags_for_resource" {
   type                            = map(map(string))
   default                         = {}
 }
+
+variable "zone_id" {
+  description                     = "The Route53 Zone ID"
+  type                            = string
+}
