@@ -2,7 +2,7 @@ data "remote_state" "superalgos-global-dns" {
     backend                       = "s3"
     config = {
         bucket                    = "CHANGE-THE-BUCKET-NAME"
-        key                       = "global/050-DNS/terraform.tfstate"
+        key                       = "global/100-VPN/terraform.tfstate"
         region                    = "CHANGE-THE-REGION"
     }
 }
